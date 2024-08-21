@@ -51,6 +51,11 @@
     .should.be.int.between(1, 4096),
     "Set to larger than 1 to use multithreading for some part of the simulation."
   ),
+  speed.up                                                               = list(
+    .default(FALSE),
+    .should.be.logical,
+    "Use experimental speed and memory optimization."
+  ),
   # ========================== Gene ============================================
   "GENE",
   GRN                                                                    = list(
@@ -60,6 +65,11 @@
       "It should be a data frame with 3 columns (target, regulator, effect). Supply NA to disable the GRN effect."
     ),
     "The GRN network."
+  ),
+  grn.effect                                                             = list(
+    .default(1),
+    .should.be.num.between(0, Inf),
+    "Overall strength of the GRN effect on the expression. Different from the effect column in the GRN data frame, which is the relative effect of each TF-target pair."
   ),
   num.genes                                                              = list(
     .default(NULL),
@@ -196,6 +206,14 @@
     NULL,
     "The proportion of 0s we see in the ATAC-seq data."
   ),
+  atac.density                                                           = list(
+    .default(NA),
+    list(
+      \(x) class(x) == "density",
+      "the value should be a density object."
+    ),
+    "Density of the non-zero ATAC-seq values. Use atac_dens_nonzero() to generate."
+  ),
   riv.mean                                                               = list(
     .default(0),
     .should.be.num.between(0, Inf),
@@ -258,6 +276,20 @@
     .default(1),
     .should.be.num.between(0, Inf),
     "For velocity mode, a factor multiplied by the expected time to transition from kon to koff and back to form the the length of a cycle."
+  ),
+  mod.cif.giv = list(
+    .default(NA),
+    list(
+      is.function, "should be a function"
+    ),
+    "Modify the generated CIF and GIV. The function takes four arguments: the kinetic parameter index (1=kon, 2=koff, 3=s), the current CIF matrix, the GIV matrix, and the cell metadata dataframe. It should return a list of two elements: the modified CIF matrix and the modified GIV matrix."
+  ),
+  ext.cif.giv = list(
+    .default(NA),
+    list(
+      is.function, "should be a function"
+    ),
+    "Add customized CIF and GIV. The function takes one argument, the kinetic parameter index (1=kon, 2=koff, 3=s). It should return a list of two elements: the extra CIF matrix (n_extra_cif x n_cells) and the GIV matrix (n_genes x n_extra_cif). Return NULL for no extra CIF and GIV."
   ),
   # ========================== Spatial =========================================
   "SIMULATION - SPATIAL",

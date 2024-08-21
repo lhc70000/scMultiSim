@@ -1,6 +1,6 @@
 Package: scMultiSim
 Title: Simulation of Multi-Modality Single Cell Data Guided By Gene Regulatory Networks and Cell-Cell Interactions
-Version: 1.1.0
+Version: 1.1.1
 Authors@R:
     c(person(given = "Hechen",
              family = "i",
@@ -32,7 +32,7 @@ Imports:
     foreach,
     rlang,
     dplyr,
-    ggplot2, 
+    ggplot2,
     Rtsne,
     ape,
     MASS,
@@ -55,6 +55,7 @@ Suggests:
     knitr,
     rmarkdown,
     roxygen2,
+    shiny,
     testthat (>= 3.0.0)
 biocViews: SingleCell, Transcriptomics, GeneExpression, Sequencing, ExperimentalDesign
 VignetteBuilder: knitr

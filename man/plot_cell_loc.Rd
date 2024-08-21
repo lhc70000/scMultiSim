@@ -10,7 +10,8 @@ plot_cell_loc(
   show.label = FALSE,
   show.arrows = TRUE,
   lr.pair = 1,
-  .cell.pop = NULL
+  .cell.pop = NULL,
+  .locs = NULL
 )
 }
 \arguments{
@@ -26,6 +27,8 @@ plot_cell_loc(
 \code{results$cci_cell_type_param[lr.pair]}}
 
 \item{.cell.pop}{Specify the cell population metadata}
+
+\item{.locs}{Manually specify the cell locations as a 2x\code{ncells} matrix}
 }
 \value{
 none

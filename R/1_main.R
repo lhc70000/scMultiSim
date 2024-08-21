@@ -65,14 +65,15 @@ sim_true_counts <- function(options, return_summarized_exp = FALSE) {
   # ==== initialization ========================================================
 
   cores <- OP("threads")
-  if (cores != 1) {
-    stop("Multithreading is not supported yet.")
-  }
 
   # create session
   sim <- new.env()
   attr(sim, "name") <- "scMultiSim Session"
   sim$start_time <- Sys.time()
+  sim$speedup <- OP("speed.up")
+  if (sim$speedup) {
+    message("Experimental speed optimization enabled.")
+  }
 
   # seeds
   # set.seed(OP("rand.seed"))
@@ -90,6 +91,9 @@ sim_true_counts <- function(options, return_summarized_exp = FALSE) {
   }
 
   GRN <- .normalizeGRNParams(.grn_params)
+  if (is.list(GRN)) {
+    GRN$name_map <- sim$gene_name_map
+  }
   N <- .getNumbers(GRN, options)
   if (!is.null(GRN)) {
     GRN$geff <- .geneEffectsByRegulator(seed[1], GRN, N)
@@ -120,8 +124,26 @@ sim_true_counts <- function(options, return_summarized_exp = FALSE) {
       sim$sp_layout_param,
       sim$sp_sc_gt,
       sim$sp_static_steps,
-      sim$sp_radius
+      sim$sp_radius,
+      sim$sp_start_layer
     )
+    if (is.numeric(grid_size) && N$cell >= grid_size ^ 2) {
+      stop("The grid size should be large enough to hold all cells.")
+    }
+
+    # skip initial layers to speed up
+    sim$sp_start_layer <- if (sim$sp_start_layer < 0) {
+      # -1 means automatically determine the start layer
+      # simulate all layers when n_cell <= 800 for compatibility
+      if (N$cell > 800) N$cell else 1
+    } else {
+      sim$sp_start_layer
+    }
+    if (sim$sp_start_layer == N$cell) {
+      message("Spatial: only the last layer will be simulated.")
+    } else if (sim$sp_start_layer != 1) {
+      stop("Spatial: start.layer values other than 1 or n_cells are not supported yet.")
+    }
 
     sim$grid <- CreateSpatialGrid(
       N$cell, N$max_nbs,
@@ -148,11 +170,18 @@ sim_true_counts <- function(options, return_summarized_exp = FALSE) {
     N$regulator
   }
 
+  sim$mod_cif <- OP("mod.cif.giv")
+  sim$ext_cif <- OP("ext.cif.giv")
+
   # ==== simulation ============================================================
 
   sim$GRN <- GRN
   sim$N <- N
   sim$options <- options
+
+  if (is.list(options$manipulate.params)) {
+    sim$params_mpl_fn <- options$manipulate.params
+  }
 
   # 1.1 CIF
   if (!sim$do_spatial) {
@@ -171,7 +200,13 @@ sim_true_counts <- function(options, return_summarized_exp = FALSE) {
   sim$GIV <- .geneIdentifyVectors(seed[4], sim, options)
 
   # region-to-gene matrix
-  sim$region_to_gene <- .regionToGeneMatrix(seed[5], N, options)
+  if (is.null(sim$region_to_gene)) {
+    sim$region_to_gene <- .regionToGeneMatrix(seed[5], N, options)
+    # TG = TR * RG
+    if (!is.null(GRN)) {
+      sim$region_to_tf <- .regionToTFMatrix(GRN, sim$region_to_gene)
+    }
+  }
 
   # 1.4 ATAC-seq & CIF (for spatial)
   if (sim$do_spatial) {
@@ -211,6 +246,7 @@ sim_true_counts <- function(options, return_summarized_exp = FALSE) {
       }
     }
     sim$CIF_spatial <- cif
+    .setSpatialFinalCellType(sim, is_discrete)
   } else {
     # ==== not spatial ====
     sim$CIF_atac <- if (is_discrete) {
@@ -221,14 +257,24 @@ sim_true_counts <- function(options, return_summarized_exp = FALSE) {
     }
     .atacSeq(seed[7], sim)
   }
+  .getExtraCIF(sim)
 
   # 1.5 Params
   if (sim$do_spatial) {
     cat("Get params...")
-    sim$params_spatial <- lapply(seq(N$cell), \(i) .getParams(
-      seed[8] + i, sim,
-      sp_cell_i = i, sp_path_i = sim$cell_path[i]
-    ))
+    n_threads <- OP("threads")
+    if (n_threads > 1) {
+      library(BiocParallel)
+      sim$params_spatial <- BiocParallel::bplapply(seq(N$cell), \(i, sim) .getParams(
+          seed[8] + i, sim,
+          sp_cell_i = i, sp_path_i = sim$cell_path[i]
+      ), sim = sim, BPPARAM = BiocParallel::MulticoreParam(workers = n_threads))
+    } else {
+      sim$params_spatial <- lapply(1:N$cell, \(i) .getParams(
+        seed[8] + i, sim,
+        sp_cell_i = i, sp_path_i = sim$cell_path[i]
+      ))
+    }
     cat("Done\n")
   } else {
     sim$params <- .getParams(seed[8], sim)
@@ -294,6 +340,7 @@ sim_true_counts <- function(options, return_summarized_exp = FALSE) {
     kinetic_params = sim$params,
     atacseq_data = if (sim$do_spatial) t(sim$sp_atac) else t(sim$atac_data),
     region_to_gene = sim$region_to_gene,
+    region_to_tf = sim$region_to_tf,
     num_genes = sim$N$gene,
     grn_params = grn_params,
     hge_scale = sim$hge_scale,
@@ -356,7 +403,6 @@ sim_true_counts <- function(options, return_summarized_exp = FALSE) {
       cci_cell_type_param = ctype_param,
       cci_cell_types = sim$cell_type_map
     ))
-    
     if (sim$sp_sc_gt) {
       result <- c(result, list(
         cci_gt = sim$cci_single_cell
@@ -393,16 +439,16 @@ sim_true_counts <- function(options, return_summarized_exp = FALSE) {
   renamed_sp <- NULL
   grn_genes <- NULL
   if (is.data.frame(grn_params)) {
-    grn_genes <- sort(unique(c(grn_params[, 1], grn_params[, 2])))
+    grn_genes <- as.character(sort(unique(c(grn_params[, 1], grn_params[, 2]))))
     name_map <- setNames(seq_along(grn_genes), grn_genes)
     renamed_grn <- data.frame(
-      target = name_map[grn_params[, 1]],
-      regulator = name_map[grn_params[, 2]],
+      target = name_map[as.character(grn_params[, 1])],
+      regulator = name_map[as.character(grn_params[, 2])],
       effect = grn_params[, 3]
     )
   }
   if (is.data.frame(sp_params)) {
-    sp_genes <- sort(unique(c(sp_params[, 1], sp_params[, 2])))
+    sp_genes <- as.character(sort(unique(c(sp_params[, 1], sp_params[, 2]))))
     sp_genes_only <- setdiff(sp_genes, grn_genes)
     name_map <- c(
       name_map,

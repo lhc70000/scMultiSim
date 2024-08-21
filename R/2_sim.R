@@ -1,5 +1,6 @@
 # match the density of the given values (X) with the density of sim$N$params_den[[i]]
 .matchParamsDen <- function(X, sim, i) {
+  keep_prev_val <- if (sim$speedup) 10000 else 20000
   N <- sim$N
   if (is.null(sim$param_sample)) {
     sim$param_sample <- list(numeric(), numeric(), numeric())
@@ -12,8 +13,10 @@
   values_X <- as.vector(X)
   values <- c(values_X, prev_values)
   ranks <- rank(values)
-  sorted <- sort(SampleDen(nsample = max(ranks), den_fun = N$params_den[[i]]))
-  if (length(prev_values) < 20000) {
+  sorted <- sort(SampleDen(nsample = max(ranks),
+                           den_fun = N$params_den[[i]],
+                           reduce.mem = sim$speedup))
+  if (length(prev_values) < keep_prev_val) {
     sim$param_sample[[i]] <- values
   }
   # return
@@ -33,6 +36,13 @@
   # set.seed(seed)
   is_spatial <- !is.null(sp_cell_i)
   is_discrete <- is.null(sp_path_i)
+  if (is_spatial) {
+    start_layer <- sim$sp_start_layer
+    max_layer <- min(
+      sim$N$cell - sp_cell_i + 1,
+      sim$path_len[sim$cell_path[sp_cell_i]]
+    )
+  }
 
   CIF <- if (is_spatial) {
     setNames(
@@ -42,7 +52,6 @@
           # discrete spatial
           cif_ <- sim$CIF_spatial$cif[[sp_cell_i]][[i]]
           cif_diff <- sim$CIF_spatial$diff_cif[[i]]
-          cbind(cif_$nd, cif_diff, cif_$reg)
         } else {
           # continuous spatial
           cif_ <- sim$CIF_spatial$cif[[sp_cell_i]][[i]]
@@ -52,8 +61,11 @@
           } else {
             NULL
           }
-          cbind(cif_$nd, cif_diff, cif_$reg)
         }
+        max_layer <- min(sim$path_len[sim$cell_path[sp_cell_i]], nrow(cif_$nd))
+        cbind(cif_$nd, cif_diff, cif_$reg)[
+          if (start_layer == 1) seq(max_layer) else max_layer,
+        , drop = FALSE]
       }),
       c("kon", "koff")
     )
@@ -77,8 +89,25 @@
   N <- sim$N
   options <- sim$options
 
+  if (is.function(sim$mod_cif)) {
+    for (i in 1:2) {
+      if (is_spatial) {
+        res <- sim$mod_cif(i, sp_cell_i, sp_path_i, CIF[[i]], GIV[[i]])
+      } else {
+        res <- sim$mod_cif(i, CIF[[i]], GIV[[i]], sim$CIF_all$meta)
+      }
+      CIF[[i]] <- res[[1]]; GIV[[i]] <- res[[2]]
+    }
+  }
+
   params <- setNames(
-    lapply(seq_len(2), \(i) .matchParamsDen(CIF[[i]] %*% t(GIV[[i]]), sim, i)),
+    lapply(seq_len(2), \(i) {
+      p <- CIF[[i]] %*% t(GIV[[i]])
+      if (!is.null(sim$ext_params) && !is.null(sim$ext_params[[i]])) {
+        p <- p + sim$ext_params[[i]]
+      }
+      .matchParamsDen(p, sim, i)}
+    ),
     c("kon", "koff")
   )
 
@@ -89,7 +118,13 @@
   cols <- s > 1
   Region_to_gene[, cols] <- Region_to_gene[, cols] / s[cols]
   # atac for kon
-  ATAC_kon <- ATAC_data %*% Region_to_gene
+  ATAC_kon <- if (is_spatial) {
+    ATAC_data[
+      if (start_layer == 1) seq(nrow(params$kon)) else max_layer,
+      , drop = FALSE] %*% Region_to_gene
+  } else {
+    ATAC_data %*% Region_to_gene
+  }
 
   # fill the zero values in ATAC_kon to preserve
   # the orders. Scale the values to less than the minimum value in ATAC_kon.
@@ -105,7 +140,9 @@
   atac_eff <- OP("atac.effect")
   atac_val <- ATAC_kon[, cols]
   ranks <- atac_eff * rank(ATAC_kon[, cols]) + (1 - atac_eff) * rank(params$kon[, cols])
-  sorted <- sort(SampleDen(nsample = max(ranks), den_fun = N$params_den[[1]]))
+  sorted <- sort(SampleDen(nsample = max(ranks),
+                           den_fun = N$params_den[[1]],
+                           reduce.mem = sim$speedup))
   params$kon[, cols] <- sorted[ranks]
 
   # ==== adjust parameters with the bimod parameter
@@ -116,6 +153,11 @@
   # decrease kon & koff in some genes to increase the bimod effect
   params$kon <- apply(t(params$kon), 2, \(x) 10^(x - bimod_vec))
   params$koff <- apply(t(params$koff), 2, \(x) 10^(x - bimod_vec))
+
+  if (is.list(sim$params_mpl_fn)) {
+    params$kon <- sim$params_mpl_fn$kon(params$kon)
+    params$koff <- sim$params_mpl_fn$koff(params$koff)
+  }
 
   # return
   params
@@ -182,7 +224,12 @@
   n_zero <- floor(n_val * OP("atac.p_zero"))
   n_nonzero <- n_val - n_zero
   # sample values
-  sampled <- sort(SampleDen(n_nonzero, den_fun = dens_nonzero))
+  dens <- OP("atac.density")
+  if (class(dens) != "density") {
+    dens <- dens_nonzero
+  }
+  sampled <- sort(SampleDen(n_nonzero, den_fun = dens,
+                            reduce.mem = sim$speedup))
   # create the result
   res <- numeric(n_val)
   # replace the non-zero indices in the original value with the corresponding
@@ -239,7 +286,16 @@
   }
 
   cell_ct <- 1
-  s_base <- CIF_all$cif$s %*% t(GIV_s)
+
+  cif__ <- CIF_all$cif$s
+  giv__ <- GIV_s
+  if (is.function(sim$mod_cif)) {
+    c(cif__, giv__) %<-% sim$mod_cif(3, cif__, giv__, CIF_all$meta)
+  }
+  s_base <- cif__ %*% t(giv__)
+  if (!is.null(sim$ext_params) && !is.null(sim$ext_params[[3]])) {
+    s_base <- s_base + sim$ext_params[[3]]
+  }
 
   oldseed <- .Random.seed
   .prepareHGE(seed, sim, s_base)
@@ -290,6 +346,7 @@
   no_grn <- is.null(curr_cif)
 
   ncells <- length(cell_idx)
+  grn_effect <- OP("grn.effect")
   do_velo <- OP("do.velocity")
   is_discrete <- OP("discrete.cif")
   intr_noise <- OP("intrinsic.noise")
@@ -314,61 +371,89 @@
       sim$dyngrn_ver_map[i_cell] <- sim$GRN$update()
     }
 
-    s_cell <- if (no_grn) {
-      .matchParamsDen(s_base[i_cell,], sim, 3)
-    } else {
-      .matchParamsDen(s_base[i_cell,] + curr_cif %*% t(sim$GRN$geff), sim, 3)
-    }
-    
-    # scale s
-    scale_s_cell <- if (scale_s_is_vector) {
-      scale_s[sim$CIF_all$meta$pop[i_cell]]
-    } else {
-      scale_s
-    }
-    s_cell <- (10^s_cell) *
-      scale_s_cell *
-      sim$hge_scale %>% as.vector()
+    done <- 2
+    while (done > 0) {
+      if (done == 1) {
+        done <- 0
+      }
 
-    counts <- if (do_velo) {
-      # Kinetic model
-      last_idx <- if (n == 1) last_parent else cell_idx[n - 1]
-      FST <- is.null(last_idx)
-      cycles <- if (FST) 15 else num_cycle
-      start_cell_time <- if (FST) 0 else sim$cell_time[last_idx]
+      s_cell <- if (no_grn) {
+        .matchParamsDen(s_base[i_cell,], sim, 3)
+      } else {
+        .matchParamsDen(s_base[i_cell,] + curr_cif %*% t(sim$GRN$geff) * grn_effect, sim, 3)
+      }
 
-      result <- gen_1branch(
-        kinet_params = list(
-          k_on = sim$params$kon[, i_cell],
-          k_off = sim$params$koff[, i_cell],
-          s = s_cell
-        ),
-        start_state = if (FST) sim$root_state else sim$state_mat[last_idx,],
-        start_u = if (FST) NULL else sim$counts_u[last_idx,],
-        start_s = if (FST) NULL else sim$counts_s[last_idx,],
-        cycle_length_factor = cycle_length,
-        randpoints1 = runif(n = cycles, min = 0, max = 1),
-        ncells1 = cycles,
-        ngenes = N$gene,
-        beta_vec = sim$beta_genes,
-        d_vec = sim$d_genes,
-        cell = n
-      )
-      sim$state_mat[i_cell,] <- result$state_mat[, cycles]
-      sim$cell_time[i_cell] <- result$cell_time[[cycles]] + start_cell_time
-      sim$velocity[i_cell,] <- result$velocity[, cycles]
-      sim$counts_u[i_cell,] <- result$counts_u[, cycles]
-      sim$counts_s[i_cell,] <- result$counts_s[, cycles]
-    } else {
-      # Beta-poisson model
-      sim$counts_s[i_cell,] <- vapply(seq(N$gene), function(i_gene) {
-        .betaPoisson(
-          kon = sim$params$kon[i_gene, i_cell],
-          koff = sim$params$koff[i_gene, i_cell],
-          s = s_cell[i_gene],
-          intr.noise = intr_noise
+      # scale s
+      scale_s_cell <- if (scale_s_is_vector) {
+        scale_s[sim$CIF_all$meta$pop[i_cell]]
+      } else {
+        scale_s
+      }
+      s_cell <- (10^s_cell) *
+        scale_s_cell *
+        sim$hge_scale %>% as.vector()
+
+      if (is.list(sim$params_mpl_fn$s)) {
+        s_cell <- sim$params_mpl_fn$s(s_cell)
+      }
+
+      counts <- if (do_velo) {
+        # Kinetic model
+        last_idx <- if (n == 1) last_parent else cell_idx[n - 1]
+        FST <- is.null(last_idx)
+        cycles <- if (FST) 15 else num_cycle
+        start_cell_time <- if (FST) 0 else sim$cell_time[last_idx]
+
+        result <- gen_1branch(
+          kinet_params = list(
+            k_on = sim$params$kon[, i_cell],
+            k_off = sim$params$koff[, i_cell],
+            s = s_cell
+          ),
+          start_state = if (FST) sim$root_state else sim$state_mat[last_idx,],
+          start_u = if (FST) NULL else sim$counts_u[last_idx,],
+          start_s = if (FST) NULL else sim$counts_s[last_idx,],
+          cycle_length_factor = cycle_length,
+          randpoints1 = runif(n = cycles, min = 0, max = 1),
+          ncells1 = cycles,
+          ngenes = N$gene,
+          beta_vec = sim$beta_genes,
+          d_vec = sim$d_genes,
+          cell = n
         )
-      }, double(1))
+        sim$state_mat[i_cell,] <- result$state_mat[, cycles]
+        sim$cell_time[i_cell] <- result$cell_time[[cycles]] + start_cell_time
+        sim$velocity[i_cell,] <- result$velocity[, cycles]
+        sim$counts_u[i_cell,] <- result$counts_u[, cycles]
+        sim$counts_s[i_cell,] <- result$counts_s[, cycles]
+      } else {
+        # Beta-poisson model
+        sim$counts_s[i_cell,] <- if (sim$speedup) {
+            .betaPoisson.vec(
+              kon = sim$params$kon[, i_cell],
+              koff = sim$params$koff[, i_cell],
+              s = s_cell,
+              intr.noise = intr_noise
+            )
+        } else {
+          vapply(seq(N$gene), function(i_gene) {
+            .betaPoisson(
+              kon = sim$params$kon[i_gene, i_cell],
+              koff = sim$params$koff[i_gene, i_cell],
+              s = s_cell[i_gene],
+              intr.noise = intr_noise
+            )
+          }, double(1))
+        }
+      }
+
+      if (is_discrete && done > 0) {
+        counts_regu <- counts[sim$GRN$regulators]
+        curr_cif <- counts_regu / (counts_regu + mean(counts))
+        done <- 1
+      } else {
+        done <- 0
+      }
     }
 
     if (!is_discrete && !no_grn) {
@@ -381,6 +466,43 @@
   stopifnot(n == ncells)
 }
 
+.setSpatialFinalCellType <- function(sim, is_discrete) {
+  grid <- sim$grid
+  CIF <- sim$CIF_spatial
+  N <- sim$N
+  # final cell type at the last layer
+  final_ctype <- integer(length = N$cell)
+  for (i in seq_len(N$cell)) {
+    final_ctype[i] <- if (is_discrete) {
+      CIF$meta[i, "cell.type.idx"]
+    } else {
+      path_i <- sim$cell_path[i]
+      layer <- min(N$cell - i + 1, sim$path_len[path_i])
+      CIF$meta_by_path[[path_i]][layer, "cell.type.idx"]
+    }
+  }
+  grid$set_final_ctypes(final_ctype)
+  sim$sp_final_ctype <- final_ctype
+}
+
+.getExtraCIF <- function(sim) {
+  if (!is.function(sim$ext_cif)) {
+    sim$ext_params <- NULL
+    return()
+  }
+  sim$ext_params <- lapply(1:3, \(i) {
+    res <- sim$ext_cif(i)
+    if (is.null(res)) {
+      NULL
+    } else {
+      if (!is.list(res) || length(res) != 2 || !is.matrix(res[[1]]) || !is.matrix(res[[2]])) {
+        stop("ext_cif must return a list of 2 matrices: CIF and GIV")
+      }
+      res[[1]] %*% t(res[[2]])
+    }
+  })
+}
+
 # simulate RNA-seq when spatial is enabled
 .rnaSeqSpatial <- function(seed, sim) {
   # set.seed(seed)
@@ -391,10 +513,12 @@
   GRN <- sim$GRN
   N <- sim$N
   options <- sim$options
+  start_layer <- sim$sp_start_layer
 
   is_debug <- isTRUE(options$debug)
   no_grn <- is.null(GRN)
   phyla <- OP("tree")
+  grn_effect <- OP("grn.effect")
   do_velo <- OP("do.velocity")
   intr_noise <- OP("intrinsic.noise")
   is_discrete <- OP("discrete.cif")
@@ -410,7 +534,6 @@
   } else {
     FALSE
   }
-  
   # hge
   CIF_s_base <- lapply(seq(N$cell), function(icell) {
     path_i <- sim$cell_path[icell]
@@ -425,13 +548,24 @@
     } else {
       NULL
     }
-    cbind(cif_$nd, cif_diff, cif_$reg)
+    if (start_layer == 1) {
+      cbind(cif_$nd, cif_diff, cif_$reg)
+    } else {
+      max_layer <- min(
+        sim$N$cell - icell + 1,
+        sim$path_len[sim$cell_path[icell]]
+      )
+      cbind(cif_$nd, cif_diff, cif_$reg)[
+        if (start_layer == 1) seq(max_layer) else max_layer,
+        , drop = FALSE]
+    }
   })
   s_base <- do.call(rbind, CIF_s_base) %*% t(GIV_s)
 
   oldseed <- .Random.seed
   .prepareHGE(seed, sim, s_base)
   .Random.seed <- oldseed
+  rm(s_base)
   # end hge
 
   c(edges, root, tips, internal) %<-% .tree_info(phyla)
@@ -459,6 +593,7 @@
     pop = character(N$cell), depth = numeric(N$cell),
     cell.type = character(N$cell), cell.type.idx = numeric(N$cell)
   )
+  sim$rg_cells <- rep(0, N$cell)
 
   if (do_velo) {
     sim$root_state <- sample(c(1, 2), size = N$gene, replace = TRUE)
@@ -485,22 +620,10 @@
     lapply(seq(N$cell), \(.) rnorm(GRN$n_reg, OP("cif.center"), OP("cif.sigma")))
   }
   curr_lig_cif <- lapply(seq(N$cell), \(.)  rnorm(N$sp_regulators, OP("cif.center"), OP("cif.sigma")))
-  
-  # final cell type at the last layer
-  final_ctype <- integer(length = N$cell)
-  for (i in seq_len(N$cell)) {
-    final_ctype[i] <- if (is_discrete) {
-      CIF$meta[i, "cell.type.idx"] 
-    } else {
-      path_i <- sim$cell_path[i]
-      layer <- N$cell - i + 1
-      CIF$meta_by_path[[path_i]][layer, "cell.type.idx"] 
-    }
-  }
-  grid$set_final_ctypes(final_ctype)
-  
+
   # stationary cci ground truth
   if (sim$sp_sc_gt) {
+    final_ctype <- sim$sp_final_ctype
     sim$cci_single_cell <- array(0, dim = c(N$cell, N$cell, N$sp_regulator))
     # for each LR pair
     full_gt <- sim$sp_ctype_param[final_ctype, final_ctype,]
@@ -510,23 +633,28 @@
     rm(full_gt); rm(ones)
   }
 
+  .add_new_cell <- function (icell) {
+    new_cell_type <- if (is_discrete) CIF$meta[icell, "cell.type.idx"] else sim$cell_path[icell]
+    grid$allocate(icell, new_cell_type)
+  }
+
   cat("Simulating...")
-  for (t_real in seq(n_steps)) {
+  for (t_real in start_layer:n_steps) {
     # num of steps is 10 more than default
     t <- if (t_real > N$cell) N$cell else t_real
     if (t_real %% 50 == 0) cat(sprintf("%d..", t_real))
 
     # add new cell to the grid
     if (t == t_real) {
-      new_cell_type <- if (is_discrete) {
-        CIF$meta[t, "cell.type.idx"]
+      if (t_real == start_layer) {
+        # if it's the first step, add cells 1:start_layer
+        for (icell in 1:t) .add_new_cell(icell)
       } else {
-        sim$cell_path[t]
+        # add the new cell
+        .add_new_cell(t)
       }
-      grid$allocate(t, new_cell_type)
     }
     is_stationary <- t != t_real && sim$sp_sc_gt
-    
     if (t_real %% 50 == 0) gc()
 
     # there are t cells now
@@ -538,8 +666,10 @@
       if (layer > max_layer) {
         layer <- max_layer
       }
+      cif_layer <- if (start_layer == 1) layer else 1
 
       # get ligand cif
+      rg_active <- rep(0, N$sp_regulators)
       neighbours <- grid$get_neighbours(icell)
       lig_cif <- double(N_lig_cif)
       for (i in seq_along(neighbours)) {
@@ -556,7 +686,7 @@
             0
           } else if (has_ctype_factor) {
             if (is_discrete) {
-              tp1 <- CIF$meta[icell, "cell.type.idx"] 
+              tp1 <- CIF$meta[icell, "cell.type.idx"]
               tp2 <- CIF$meta[nb, "cell.type.idx"]
               sim$sp_ctype_param[tp1, tp2, j]
             } else {
@@ -566,11 +696,13 @@
               max_layer2 <- sim$path_len[nb_path]
               if (layer2 > max_layer2) layer2 <- max_layer2
               tp2 <- CIF$meta_by_path[[nb_path]][layer2, "cell.type.idx"]
+              rg_active[j] <- sim$sp_ctype_param[tp2, tp1, j]
               sim$sp_ctype_param[tp1, tp2, j]
             }
           } else {
             1
           }
+          if (rg_active[j] > 0 && j == 1) sim$rg_cells[icell] <- 1
           lig_cif[base + j] <- curr_lig_cif[[nb]][j] * ctype_factor
         }
       }
@@ -594,13 +726,25 @@
       } else {
         GRN$geff
       }
+
       # get s
       params <- sim$params_spatial[[icell]]
-      s_cell <- CIF_s_base[[icell]][layer,] %*% t(GIV_s) +
-        regu_cif %*% t(cbind(geff, sim$sp_effect))
+      cif__ <- CIF_s_base[[icell]][cif_layer,]
+      giv__ <- GIV_s
+      if (is.function(sim$mod_cif)) {
+        c(cif__, giv__) %<-% sim$mod_cif(3, i, path_i, cif__, giv__)
+      }
+      s_cell <- cif__ %*% t(giv__) +
+        (regu_cif %*% t(cbind(geff, sim$sp_effect))) * grn_effect
+
+      # s_cell[sim$sp_regulators] <- s_cell[sim$sp_regulators] + 20 * rg_active
+
+      if (!is.null(sim$ext_params) && !is.null(sim$ext_params[[3]])) {
+        s_cell <- s_cell + sim$ext_params[[3]][icell,]
+      }
       s_cell <- .matchParamsDen(s_cell, sim, 3)
-      
-      # scale s 
+
+      # scale s
       scale_s_cell <- if (scale_s_is_vector) {
         scale_s[CIF$meta[icell, "cell.type.idx"]]
       } else {
@@ -611,14 +755,23 @@
         sim$hge_scale %>% as.vector()
 
       # Beta-poisson model
-      counts <- vapply(seq(N$gene), function(i_gene) {
-        .betaPoisson(
-          kon = sim$params_spatial[[icell]]$kon[i_gene, layer],
-          koff = sim$params_spatial[[icell]]$koff[i_gene, layer],
-          s = s_cell[i_gene],
+      counts <- if (sim$speedup) {
+        .betaPoisson.vec(
+          kon = sim$params_spatial[[icell]]$kon[, cif_layer],
+          koff = sim$params_spatial[[icell]]$koff[, cif_layer],
+          s = s_cell,
           intr.noise = intr_noise
         )
-      }, double(1))
+      } else {
+        vapply(seq(N$gene), function(i_gene) {
+          .betaPoisson(
+            kon = sim$params_spatial[[icell]]$kon[i_gene, cif_layer],
+            koff = sim$params_spatial[[icell]]$koff[i_gene, cif_layer],
+            s = s_cell[i_gene],
+            intr.noise = intr_noise
+          )
+        }, double(1))
+      }
 
       counts_regu <- if (no_grn) {
         counts[sim$sp_regulators]
@@ -795,6 +948,16 @@ gen_1branch <- function(kinet_params, start_state, start_s, start_u, randpoints1
   x <- rpois(1, y * s)
   # use floor because it's more close to the Poisson distribution
   # floor(intr_noise * x + (1 - intr_noise) * x_mean)
+  intr.noise * x + (1 - intr.noise) * xMean
+}
+
+
+# Vectorized .betaPoisson
+.betaPoisson.vec <- function (kon, koff, s, intr.noise) {
+  yMean <- kon / (kon + koff)
+  xMean <- yMean * s
+  y <- rbeta(length(kon), kon, koff)
+  x <- rpois(length(kon), y * s)
   intr.noise * x + (1 - intr.noise) * xMean
 }
 

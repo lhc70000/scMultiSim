@@ -51,6 +51,8 @@ plot_phyla <- function(tree) {
 #' @param continuous Whether `labels` should be treated as continuous, e.g. pseudotime
 #' @param labels2 Additional label
 #' @param lim Specify the xlim and y lim c(x_min, x_max, y_min, y_max)
+#' @param runPCA Whether to run PCA before t-SNE
+#' @param alpha The alpha value for the points
 #'
 #' @return the figure if not `save`, otherwise save the figure as `plot.name`.pdf
 #' @export
@@ -59,8 +61,12 @@ plot_phyla <- function(tree) {
 #' results <- sim_example(ncells = 10)
 #' plot_tsne(log2(results$counts + 1), results$cell_meta$pop, perplexity = 3)
 plot_tsne <- function(data, labels, perplexity = 60, legend = '', plot.name = '', save = FALSE, rand.seed = 0,
-                      continuous = FALSE, labels2 = NULL, lim = NULL) {
+                      continuous = FALSE, labels2 = NULL, lim = NULL, runPCA = FALSE, alpha = 1) {
   # set.seed(rand.seed)
+
+  if (runPCA) {
+    data <- t(prcomp(t(data))$x[, 1:30])
+  }
 
   data_tsne <- Rtsne(t(data), perplexity = perplexity, check_duplicates = FALSE)
   if (!continuous) {
@@ -76,11 +82,11 @@ plot_tsne <- function(data, labels, perplexity = 60, legend = '', plot.name = ''
 
   if (is.null(labels2)) {
     p <- p +
-      geom_point(aes(colour = .data[['label']]), shape = 20) +
+      geom_point(aes(colour = .data[['label']]), shape = 20, alpha = alpha) +
       labs(color = legend)
   } else {
     p <- p +
-      geom_point(aes(colour = .data[['label']], shape = factor(labels2))) +
+      geom_point(aes(colour = .data[['label']], shape = factor(labels2)), alpha = alpha) +
       scale_shape_manual(values = c(4, 15, 5)) +
       labs(color = legend)
   }
@@ -106,7 +112,7 @@ plot_tsne <- function(data, labels, perplexity = 60, legend = '', plot.name = ''
 
 
 #' Plot the CCI grid
-#' 
+#'
 #' In normal cases, please use `plotCellLoc` instead.
 #'
 #' @param results The scMultisim result object
@@ -219,6 +225,7 @@ plot_gene_module_cor_heatmap <- function(
 #' @param lr.pair The ligand-receptor pair used to plot CCI arrows
 #' `results$cci_cell_type_param[lr.pair]`
 #' @param .cell.pop Specify the cell population metadata
+#' @param .locs Manually specify the cell locations as a 2x`ncells` matrix
 #'
 #' @return none
 #' @export
@@ -228,16 +235,16 @@ plot_gene_module_cor_heatmap <- function(
 #' plot_cell_loc(results)
 plot_cell_loc <- function(
   results = .getResultsFromGlobal(),
-  size = 4, show.label = FALSE, show.arrows = TRUE, lr.pair = 1, .cell.pop = NULL
+  size = 4, show.label = FALSE, show.arrows = TRUE, lr.pair = 1, .cell.pop = NULL, .locs = NULL
 ) {
   if (is.null(.cell.pop))
-    .cell.pop <- results$cell_meta$pop
+    .cell.pop <- results$cell_meta$cell.type
 
-  locs <- vapply(results$grid$locs, \(a) a, numeric(2))
+  locs <- if (is.null(.locs)) vapply(results$grid$locs, \(a) a, numeric(2)) else .locs
   data <- data.frame(
     x = locs[1,],
     y = locs[2,],
-    cell_type = if (is.null(.cell.pop)) results$cell_meta$cell.type else .cell.pop
+    cell_type = .cell.pop
   )
   p <- ggplot()
   p <- p +
@@ -486,7 +493,7 @@ gene_corr_cci <- function(
       geom_raster() +
       scale_fill_viridis_c()
   } else {
-    # correlation: CCI regulator - CCI target 
+    # correlation: CCI regulator - CCI target
 
     target <- numeric()
     regulator <- numeric()
@@ -563,6 +570,114 @@ gene_corr_cci <- function(
     } else {
       res_pair
     }
+  }
+}
+
+
+gene_coexpr_cci <- function(
+  results = .getResultsFromGlobal(),
+  .pair = NULL,
+  .exclude.same.types = TRUE
+) {
+  options <- results$.options
+  ncells <- options$num.cells
+  ngenes <- nrow(results$counts)
+
+  if (!("cci" %in% names(options))) {
+    warn("CCI is not enabled in the result object")
+    return()
+  }
+  sp_params <- options$cci$params
+
+  nb_list <- list()
+  non_nb_list <- list()
+  for (icell in 1:ncells) {
+    nb_list[[icell]] <- nbs <- na.omit(results$grid$get_neighbours(icell))
+    non_nb_list[[icell]] <- sample(setdiff(1:ncells, nbs), size = 4)
+  }
+
+  # coexpresion: CCI regulator - CCI target
+  target <- numeric()
+  regulator <- numeric()
+  mean.ct.rg <- list()
+  mean.ct.tg <- list()
+  mean.non.ct <- list()
+  mean.non.nbs <- list()
+  res_pair <- NULL
+  ctp <- results$cci_cell_type_param
+
+  for (j in 1:nrow(sp_params)) {
+    rg <- sp_params[j, 2]
+    tg <- sp_params[j, 1]
+
+    rg_list <- numeric()
+    tg_list <- numeric()
+    nct_tg_list <- numeric()  # cell types without cci
+    nct_rg_list <- numeric()
+    non_rg_list <- numeric()
+    non_tg_list <- numeric()
+
+    rg_cells <- rep(0, ncells)
+    for (icell in 1:ncells) {
+      nbs <- nb_list[[icell]]
+      rg_cnt <- results$counts[rg, icell]
+      ct1 <- results$cell_meta$cell.type.idx[icell]
+
+      for (nb in nbs) {
+        tg_cnt <- results$counts[tg, nb]
+        ct2 <- results$cell_meta$cell.type.idx[nb]
+        # if (.exclude.same.types && ct1 == ct2) next
+        if (any(
+          ctp$ligand == rg &
+            ctp$receptor == tg &
+            ctp$ct1 == ct1 &
+            ctp$ct2 == ct2
+        )) {
+          rg_list <- c(rg_list, rg_cnt)
+          tg_list <- c(tg_list, tg_cnt)
+        } else {
+          nct_rg_list <- c(nct_rg_list, rg_cnt)
+          nct_tg_list <- c(nct_tg_list, tg_cnt)
+        }
+      }
+      non_nbs <- non_nb_list[[icell]]
+      for (nb in non_nbs) {
+        tg_cnt <- results$counts[tg, nb]
+        non_rg_list <- c(non_rg_list, rg_cnt)
+        non_tg_list <- c(non_tg_list, tg_cnt)
+      }
+    }
+
+    target <- c(target, tg)
+    regulator <- c(regulator, rg)
+    mean.ct.rg[[j]] <- rg_list
+    mean.ct.tg[[j]] <- tg_list
+    mean.non.ct[[j]] <- c(nct_tg_list, nct_rg_list)
+    mean.non.nbs[[j]] <- c(non_rg_list, non_tg_list)
+    if (!is.null(.pair) && all(.pair == c(rg, tg))) {
+      res_pair <- list(rg = rg_list, tg = tg_list)
+    }
+  }
+
+  res <- data.frame(target, regulator,
+                    mean.cci.rg = vapply(mean.ct.rg, mean, numeric(1)),
+                    mean.cci.tg = vapply(mean.ct.tg, mean, numeric(1)),
+                    mean.non.cci = vapply(mean.non.ct, mean, numeric(1)),
+                    mean.non.nbs = vapply(mean.non.nbs, mean, numeric(1)))
+
+  plot_df <- rbind(
+    data.frame(name = "With CCI (ligand)", value = unlist(mean.ct.rg)),
+    data.frame(name = "With CCI (receptor)", value = unlist(mean.ct.tg)),
+    data.frame(name = "Without CCI", value = unlist(mean.non.ct)),
+    data.frame(name = "Non-nbs", value = unlist(mean.non.nbs)))
+  plot_df$name <- factor(plot_df$name, levels = c("With CCI (ligand)", "With CCI (receptor)", "Without CCI", "Non-nbs"))
+  p_mean <- ggplot(plot_df, aes(x = name, y = value, fill = name)) +
+    geom_boxplot()
+
+  if (is.null(.pair)) {
+    dots_list(res, p_mean)
+  } else {
+    res_pair
   }
 }
 

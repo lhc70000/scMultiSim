@@ -14,7 +14,9 @@ plot_tsne(
   rand.seed = 0,
   continuous = FALSE,
   labels2 = NULL,
-  lim = NULL
+  lim = NULL,
+  runPCA = FALSE,
+  alpha = 1
 )
 }
 \arguments{
@@ -37,6 +39,10 @@ plot_tsne(
 \item{labels2}{Additional label}
 
 \item{lim}{Specify the xlim and y lim c(x_min, x_max, y_min, y_max)}
+
+\item{runPCA}{Whether to run PCA before t-SNE}
+
+\item{alpha}{The alpha value for the points}
 }
 \value{
 the figure if not \code{save}, otherwise save the figure as \code{plot.name}.pdf

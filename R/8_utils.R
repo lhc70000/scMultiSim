@@ -15,20 +15,62 @@
 }
 
 
+.regionToTFMatrix <- function(GRN, region_to_gene, .all.genes = FALSE) {
+  res <- matrix(0, nrow = nrow(region_to_gene), ncol = GRN$n_reg)
+  # GRN$geff: gene x tf
+  geff <- GRN$geff > 0
+  # region_to_gene: region x gene
+  # for each region
+  for (i in seq_len(nrow(region_to_gene))) {
+    # get genes in this region
+    genes <- which(region_to_gene[i, ] > 0)
+    if (length(genes) == 0) {
+      next
+    }
+    if (.all.genes) {
+      # if a TF also regulates all these genes
+      tfs <- which(colSums(geff[genes, , drop = F]) == length(genes))
+    } else {
+      tfs <- which(colSums(geff[genes, , drop = F]) > 0)
+    }
+    res[i, tfs] <- 1
+  }
+  res
+}
+
+
 #' sample from smoothed density function
 #' @param nsample number of samples needed
 #' @param den_fun density function estimated from density() from R default
+#' @param reduce.mem use alternative implementation to reduce memory usage
 #' @return a vector of samples
-SampleDen <- function(nsample, den_fun) {
+SampleDen <- function(nsample, den_fun, reduce.mem = FALSE) {
   probs <- den_fun$y / sum(den_fun$y)
   bw <- den_fun$x[2] - den_fun$x[1]
-  bin_id <- sample(size = nsample, x = seq_along(probs), prob = probs, replace = TRUE)
-  counts <- table(bin_id)
-  sampled_bins <- as.numeric(names(counts))
-  samples <- lapply(seq_along(counts), function(j) {
-    runif(n = counts[j], min = (den_fun$x[sampled_bins[j]] - 0.5 * bw), max = (den_fun$x[sampled_bins[j]] + 0.5 * bw))
-  })
-  samples <- do.call(c, samples)
+  probs_seq = seq_along(probs)
+  mins <- den_fun$x[probs_seq] - 0.5 * bw
+  maxs <- den_fun$x[probs_seq] + 0.5 * bw
+
+  if (reduce.mem) {
+    counts <- rmultinom(n = 1, size = nsample, prob = probs)
+    total_samples <- sum(counts)
+    samples <- runif(total_samples) *
+      rep(maxs - mins, times = counts) +
+      rep(mins, times = counts)
+  } else {
+    bin_id <- sample(size = nsample, x = probs_seq, prob = probs, replace = TRUE)
+    counts <- tabulate(bin_id, nbins = length(probs))
+    total_samples <- sum(counts)
+    samples <- numeric(length = total_samples)
+    cum_counts <- c(0, cumsum(counts))
+    for (j in 1:length(counts)) {
+      if (counts[j] > 0) {
+        samples[(cum_counts[j] + 1):cum_counts[j + 1]] <-
+          runif(counts[j], min = mins[j], max = maxs[j])
+      }
+    }
+  }
+
   return(samples)
 }
 
@@ -118,7 +160,7 @@ Phyla1 <- function(len = 1) {
 # print a summary of simulation parameters
 .print_param_summary <- function(sim) {
   cat(sprintf("intr noise: %g\n", sim$options$intrinsic.noise))
-  
+
   N <- sim$N
   cat("======== Params Summary ========\n")
   cat(sprintf("Genes: %d (%d GRN + %d Non-GRN)\n", N$gene, N$grn.gene, N$non.grn.gene))
@@ -130,7 +172,7 @@ Phyla1 <- function(len = 1) {
   if (sim$do_spatial) {
     cat(sprintf("Spatial: %d regulators\n", length(sim$sp_regulators)))
   }
-  
+
   cat("Params:\n")
   cat("  CIF ")
   if (sim$do_spatial) {
@@ -140,12 +182,12 @@ Phyla1 <- function(len = 1) {
     .print_matrix_dim(sim$CIF_all$cif$koff, "koff", newline = FALSE)
     .print_matrix_dim(sim$CIF_all$cif$s, "s")
   }
-  
+
   cat("  GIV ")
   .print_matrix_dim(sim$GIV$kon, "kon", newline = FALSE)
   .print_matrix_dim(sim$GIV$koff, "koff", newline = FALSE)
   .print_matrix_dim(sim$GIV$s, "s")
-  
+
   cat("  Params ")
   if (sim$do_spatial) {
     .print_matrix_dim(sim$params_spatial[[1]]$kon, "kon", newline = FALSE)
@@ -154,11 +196,11 @@ Phyla1 <- function(len = 1) {
     .print_matrix_dim(sim$params$kon, "kon", newline = FALSE)
     .print_matrix_dim(sim$params$koff, "koff")
   }
-  
+
   .print_matrix_dim(sim$CIF_atac, "  CIF_atac")
   .print_matrix_dim(sim$region_to_gene, "  Region2Gene")
   .print_matrix_dim(sim$atac_data, "  ATAC")
-  
+
   cat("================================\n")
 }
 
@@ -180,11 +222,11 @@ Phyla1 <- function(len = 1) {
 .print_gene_in_grn <- function(sim) {
   rg <- sim$GRN$regulators
   tg <- sim$GRN$targets
-  
+
   if (sim$do_spatial) {
-    
+
   } else {
-    
+
   }
 }
 
@@ -241,4 +283,9 @@ sim_example_spatial <- function(ncells = 10) {
     )
   )
   sim_true_counts(options)
+}
+
+atac_dens_nonzero <- function(data) {
+  x <- data[data > 0]
+  density(x = log2(x + 1), adjust = 1, n = 999)
 }
