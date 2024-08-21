@@ -56,6 +56,7 @@ set.seed(42)
 
 options_ <- list(
   GRN = GRN_params_100,
+  speed.up = TRUE,
   num.genes = 120,
   num.cells = 80,
   num.cifs = 20,
@@ -136,6 +137,7 @@ spatial_options <- function (...) {
   list(
     rand.seed = 0,
     GRN = GRN_params_100,
+    speed.up = TRUE,
     num.genes = 200,
     num.cells = 300,
     num.cifs = 50,
