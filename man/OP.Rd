@@ -17,3 +17,4 @@ the parameter value
 \description{
 Get option from an object in the current environment
 }
+\keyword{internal}

@@ -10,3 +10,41 @@ articles:
       - basics
       - spatialCCI
       - articles/options
+reference:
+  - title: Simulation
+    desc: Functions for simulating single-cell data.
+  - contents:
+      - sim_true_counts
+      - add_expr_noise
+      - divide_batches
+      - add_outliers
+  - title: Visualization
+    desc: Functions for visualizing the results.
+  - contents:
+    - starts_with("plot_")
+    - gene_corr_cci
+    - gene_corr_regulator
+  - title: Help
+    desc: Functions for getting help.
+  - contents:
+    - run_shiny
+    - scmultisim_help
+  - title: Utilities
+    desc: Utility functions that can be useful for simulating data.
+  - contents:
+    - cci_cell_type_params
+    - gen_clutter
+  - title: Data
+    desc: Default data provided by scMultiSim
+  - contents:
+    - starts_with("Phyla")
+    - has_keyword("datasets")
+  - title: Internal helpers
+    desc: Internal helper functions, but can be useful for advanced customization.
+  - contents:
+    - Get_1region_ATAC_correlation
+    - Get_ATAC_correlation
+    - True2ObservedATAC
+    - True2ObservedCounts
+    - sim_example_200_cells
+    - sim_example_200_cells_spatial

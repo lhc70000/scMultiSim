@@ -20,3 +20,4 @@ from transcript length to number of fragments (for the nonUMI protocol)
 data(len2nfrag)
 }
 \keyword{datasets}
+\keyword{internal}

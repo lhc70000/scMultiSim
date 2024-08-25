@@ -15,3 +15,4 @@ a list of two vectors, the first vector is a vector of 1s, the second vector is 
 \description{
 expand transcript counts to a vector of binaries of the same length of as the number of transcripts
 }
+\keyword{internal}

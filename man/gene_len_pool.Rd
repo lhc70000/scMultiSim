@@ -20,3 +20,4 @@ a pool of gene lengths to sample from
 data(gene_len_pool)
 }
 \keyword{datasets}
+\keyword{internal}

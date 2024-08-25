@@ -38,3 +38,4 @@ a list containing the cif and meta data
 \description{
 Generates cifs for cells sampled along the trajectory of cell development
 }
+\keyword{internal}

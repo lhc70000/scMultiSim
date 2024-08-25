@@ -23,3 +23,4 @@ a vector of length n
 \description{
 sample from truncated normal distribution
 }
+\keyword{internal}

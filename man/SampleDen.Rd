@@ -19,3 +19,4 @@ a vector of samples
 \description{
 sample from smoothed density function
 }
+\keyword{internal}

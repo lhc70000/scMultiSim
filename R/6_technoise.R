@@ -446,6 +446,15 @@ True2ObservedATAC <- function(atacseq_data, randseed, observation_prob = 0.3, sd
   return(prob)
 }
 
+#' Add outliers to the observed counts
+#' @param res The scMultisim result object
+#' @param prob The probability of adding outliers for each gene
+#' @param factor The factor of the outliers
+#' @param sd The standard deviation of the outliers
+#' @param cell.num For a gene, the number of cells chosen to add outliers
+#' @param max.var The maximum variance allowed
+#' @export
+#' @return none
 add_outliers <- function (
   res, prob = 0.01, factor = 2, sd = 0.5, cell.num = 1, max.var = Inf
 ) {
