@@ -47,3 +47,4 @@ a list of 4 elements, the first element is true counts, second is the gene level
 \description{
 Generate true transcript counts for linear structure
 }
+\keyword{internal}

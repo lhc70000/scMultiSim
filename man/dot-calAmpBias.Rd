@@ -21,3 +21,4 @@ a vector
 \description{
 Simulate technical biases
 }
+\keyword{internal}

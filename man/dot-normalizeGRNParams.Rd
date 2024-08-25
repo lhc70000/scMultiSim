@@ -15,3 +15,4 @@ list
 \description{
 Rename the original gene IDs in the GRN table to integers.
 }
+\keyword{internal}

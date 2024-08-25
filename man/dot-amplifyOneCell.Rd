@@ -47,3 +47,4 @@ read counts (if protocol="nonUMI") or UMI counts (if protocol="UMI)
 \description{
 This function simulates the amplification, library prep, and the sequencing processes.
 }
+\keyword{internal}

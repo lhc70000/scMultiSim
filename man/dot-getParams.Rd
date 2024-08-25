@@ -21,3 +21,4 @@ the kinetic parameters
 \description{
 Get Kineic Parameters for all cells and genes
 }
+\keyword{internal}

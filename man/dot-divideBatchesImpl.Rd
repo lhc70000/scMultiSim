@@ -29,3 +29,4 @@ a list with two elements: counts and meta_cell
 \description{
 Divide the observed counts into multiple batches by adding batch effect to each batch
 }
+\keyword{internal}
