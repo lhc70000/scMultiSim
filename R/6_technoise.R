@@ -96,6 +96,7 @@ divide_batches <- function(results, nbatch = 2, effect = 3, randseed = 0) {
 #' @param nbatch number of batches
 #' @param batch_effect_size amount of batch effects. Larger values result in bigger differences between batches. Default is 1.
 #' @param randseed random seed
+#' @keywords internal
 #' @return a list with two elements: counts and meta_cell
 .divideBatchesImpl <- function(counts, meta_cell, nbatch, batch_effect_size = 1, randseed = 0) {
   # set.seed(randseed)
@@ -136,6 +137,7 @@ divide_batches <- function(results, nbatch = 2, effect = 3, randseed = 0) {
 #' @param LinearAmp if linear amplification is used for pre-amplification step, default is FALSE
 #' @param LinearAmp_coef the coeficient of linear amplification, that is, how many times each molecule is amplified by
 #' @param N_molecules_SEQ number of molecules sent for sequencing; sequencing depth
+#' @keywords internal
 #' @return read counts (if protocol="nonUMI") or UMI counts (if protocol="UMI)
 .amplifyOneCell <- function(true_counts_1cell, protocol, rate_2cap, gene_len, amp_bias,
                             rate_2PCR, nPCR1, nPCR2, LinearAmp, LinearAmp_coef, N_molecules_SEQ) {
@@ -368,6 +370,7 @@ True2ObservedATAC <- function(atacseq_data, randseed, observation_prob = 0.3, sd
 #' @param nbins number of bins for gene length
 #' @param gene_len transcript length of each gene
 #' @param amp_bias_limit range of amplification bias for each gene, a vector of length ngenes
+#' @keywords internal
 #' @return a vector
 .calAmpBias <- function(lenslope, nbins, gene_len, amp_bias_limit) {
   ngenes <- length(gene_len)
@@ -401,6 +404,7 @@ True2ObservedATAC <- function(atacseq_data, randseed, observation_prob = 0.3, sd
 
 #' expand transcript counts to a vector of binaries of the same length of as the number of transcripts
 #' @param true_counts_1cell number of transcript in one cell
+#' @keywords internal
 #' @return a list of two vectors, the first vector is a vector of 1s, the second vector is the index of transcripts
 .expandToBinary <- function(true_counts_1cell) {
   names(true_counts_1cell) <- NULL
@@ -417,6 +421,7 @@ True2ObservedATAC <- function(atacseq_data, randseed, observation_prob = 0.3, sd
 #' @param b the maximum value allowed
 #' @param mean mean of the normal distribution
 #' @param sd standard deviation of the normal distribution
+#' @keywords internal
 #' @return a vector of length n
 .rnormTrunc <- function(n, mean, sd, a, b) {
   vec1 <- rnorm(n, mean = mean, sd = sd)

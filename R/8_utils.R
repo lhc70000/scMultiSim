@@ -43,6 +43,7 @@
 #' @param nsample number of samples needed
 #' @param den_fun density function estimated from density() from R default
 #' @param reduce.mem use alternative implementation to reduce memory usage
+#' @keywords internal
 #' @return a vector of samples
 SampleDen <- function(nsample, den_fun, reduce.mem = FALSE) {
   probs <- den_fun$y / sum(den_fun$y)

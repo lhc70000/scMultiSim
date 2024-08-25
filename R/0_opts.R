@@ -380,7 +380,7 @@
 #'
 #' @param ... the parameter name
 #' @param .name get option from this object
-#'
+#' @keywords internal
 #' @return the parameter value
 OP <- function(..., .name = 'options') {
   options <- get(.name, envir = caller_env())

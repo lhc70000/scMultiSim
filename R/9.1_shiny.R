@@ -1,8 +1,8 @@
 #' Launch the Shiny App to configure the simulation
 #' @export
 run_shiny <- function() {
-  # appDir <- system.file("shiny-app", package = "scMultiSim")
-  appDir <- "inst/shiny-app"
+  appDir <- system.file("shiny-app", package = "scMultiSim")
+  # appDir <- "inst/shiny-app"
   shiny::runApp(appDir, port = 8888, launch.browser = T)
 }
 

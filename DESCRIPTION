@@ -63,3 +63,4 @@ Roxygen: list(markdown = TRUE)
 BugReports: https://github.com/ZhangLabGT/scMultiSim/issues
 URL: https://github.com/ZhangLabGT/scMultiSim
 Config/testthat/edition: 3
+URL: https://zhanglabgt.github.io/scMultiSim/

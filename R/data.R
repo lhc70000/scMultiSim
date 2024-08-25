@@ -4,7 +4,7 @@
 #' @usage data(param_realdata.zeisel.imputed)
 #' @format a data frame.
 #' @return a data frame.
-#' @keywords datasets
+#' @keywords datasets internal
 #' @examples 
 #' data(param_realdata.zeisel.imputed)
 "match_params"
@@ -16,7 +16,7 @@
 #' @usage data(gene_len_pool)
 #' @format a vector.
 #' @return a vector of gene lengths.
-#' @keywords datasets
+#' @keywords datasets internal
 #' @examples 
 #' data(gene_len_pool)
 "gene_len_pool"
@@ -28,7 +28,7 @@
 #' @usage data(len2nfrag)
 #' @format a vector.
 #' @return a vector.
-#' @keywords datasets
+#' @keywords datasets internal
 #' @examples 
 #' data(len2nfrag)
 "len2nfrag"
