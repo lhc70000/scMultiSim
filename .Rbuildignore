@@ -1,7 +1,14 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^doc$
+^bench$
+^figures$
 ^Meta$
 ^\.vscode$
 ^\.idea$
 ^tmp$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^\.github$
+^vignettes/articles$

@@ -1,5 +1,5 @@
 ---
-title: "scMultiSim Tutorial"
+title: "Simulating Multimodal Single-cell Datasets"
 output:
   BiocStyle::html_document:
   toc: true

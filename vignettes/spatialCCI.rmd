@@ -12,6 +12,8 @@ vignette: >
 ```{r "setup", include=FALSE}
 require("knitr")
 opts_chunk$set(fig.width=4, fig.height=3)
+
+devtools::load_all(".")
 ```
 
 The following chunk will install all the required packages.
@@ -38,7 +40,7 @@ The following chunk will install all the required packages.
 })()
 ```
 
-# Simulating Spatial Cell-Cell Interactions
+## Simulating Spatial Cell-Cell Interactions
 
 scMultiSim can simulate spatial cell-cell interactions.
 To do so, we need to provide the `cci` option as a list.
@@ -107,7 +109,7 @@ The cell locations are available in `results$cci_locs`.
 head(results$cci_locs)
 ```
 
-## Speeding up the Simulation
+### Speeding up the Simulation
 
 Simulating spatial cell-cell interactions can be computationally expensive.
 Setting these two options can speed up the simulation:
@@ -133,11 +135,11 @@ When set to `n_cells`, the simulation will skip all previous steps by adding all
 By default, `start.layer` will be set to `n_cells` when number of cells is greater than 800.
 
 
-# Spatial layouts
+## Spatial layouts
 
 scMultiSim provides powerful customization options for spatial cell layouts.
 
-## Built-in layouts
+### Built-in layouts
 
 scMultiSim ships with several built-in spatial layouts.
 The `enhanced` layout is the default layout, where cells are added to the grid one by one.
@@ -206,7 +208,7 @@ results <- sim_true_counts(spatial_options(
 plot_cell_loc(results, show.arrows = FALSE)
 ```
 
-## Custom layouts
+### Custom layouts
 
 It is also possible to layout the cells programmatically.
 The `layout` option can be a function that takes the cell type information and returns the spatial locations of the cells:
@@ -292,7 +294,7 @@ layout_fn <- function(grid_size, final_types) {
 Inspecting the result, we can see the three spatial domains, where the middle one contains a mix of two cell types.
 
 ```{r layout-domains-plot, fig.width=6, fig.height=6}
-results <- sim_true_counts(list2(
+results <- sim_true_counts(list(
   num.cells = 500,
   num.genes = 300,
   num.cifs = 40,
@@ -356,7 +358,7 @@ ext_cif <- function(i) {
 ```
 
 ```{r}
-results <- sim_true_counts(list2(
+results <- sim_true_counts(list(
   num.cells = 500,
   num.genes = 300,
   num.cifs = 40,
@@ -386,7 +388,7 @@ plot_cell_loc(results, show.arrows = FALSE,
               .cell.pop = log(results$counts[299,] + 1)) + scale_colour_viridis_c()
 ```
 
-# Session Information
+## Session Information
 
 ```{r session-info}
 sessionInfo()

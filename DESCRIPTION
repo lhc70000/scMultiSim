@@ -25,7 +25,7 @@ Description:
     and to assist in experimental design of wet-lab experiments.
 License: Artistic-2.0
 Encoding: UTF-8
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.1
 Depends:
     R (>= 3.5.0)
 Imports:
@@ -62,3 +62,4 @@ VignetteBuilder: knitr
 Roxygen: list(markdown = TRUE)
 BugReports: https://github.com/ZhangLabGT/scMultiSim/issues
 Config/testthat/edition: 3
+URL: https://zhanglabgt.github.io/scMultiSim/

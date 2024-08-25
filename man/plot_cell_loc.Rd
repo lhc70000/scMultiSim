@@ -10,7 +10,8 @@ plot_cell_loc(
   show.label = FALSE,
   show.arrows = TRUE,
   lr.pair = 1,
-  .cell.pop = NULL
+  .cell.pop = NULL,
+  .locs = NULL
 )
 }
 \arguments{

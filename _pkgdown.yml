@@ -1,0 +1,12 @@
+url: https://zhanglabgt.github.io/scMultiSim/
+template:
+  bootstrap: 5
+  light-switch: true
+articles:
+  - title: Tutorials
+    navbar: ~
+    contents:
+      - articles/workflow
+      - basics
+      - spatialCCI
+      - articles/options

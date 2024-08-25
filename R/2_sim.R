@@ -29,7 +29,7 @@
 #' @param sim the simulation environment
 #' @param sp_cell_i spatial cell index
 #' @param sp_path_i the pre-sampled path along the tree for this cell
-#'
+#' @keywords internal
 #' @return the kinetic parameters
 .getParams <- function(seed, sim, sp_cell_i = NULL, sp_path_i = NULL) {
   set.seed(seed)
@@ -819,6 +819,7 @@
 #' @param d_vec degradation rate of each gene
 #' @param cycle_length_factor for generating velocity data, a factor which is multiplied by the expected time to transition from kon to koff and back to to form the the length of a cycle
 #' @param cell the cell number currently having counts generated
+#' @keywords internal
 #' @return a list of 4 elements, the first element is true counts, second is the gene level meta information, the third is cell level meta information, including a matrix of evf and a vector of cell identity, and the fourth is the parameters kon, koff and s used to simulation the true counts
 gen_1branch <- function(kinet_params, start_state, start_s, start_u, randpoints1, ncells1, ngenes, beta_vec, d_vec, cycle_length_factor, cell) {
 

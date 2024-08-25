@@ -14,7 +14,9 @@ plot_tsne(
   rand.seed = 0,
   continuous = FALSE,
   labels2 = NULL,
-  lim = NULL
+  lim = NULL,
+  runPCA = FALSE,
+  alpha = 1
 )
 }
 \arguments{

@@ -265,6 +265,16 @@ cci_cell_type_params <- function(tree, total.lr, ctype.lr = 4:6, step.size = 1, 
   )
 }
 
+#' generate a clutter of cells by growing from the center
+#' @param n_cell the number of cells
+#' @param grid_size the width and height of the grid
+#' @param center the center of the grid
+#' @param existing_loc only place cells on the specified existing locations
+#' @param existing_grid manually specify what locations are in the grid
+#' @export
+#' @return a matrix of locations
+#' @examples gen_clutter(10, 10, c(5, 5))
+#'
 gen_clutter <- function(n_cell, grid_size = NA, center = c(0, 0),
                          existing_loc = NULL, existing_grid = NULL) {
   .in_grid <- function(x, y) {

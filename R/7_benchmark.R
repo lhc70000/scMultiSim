@@ -933,6 +933,7 @@ plot_rna_velocity <- function(
 
 #' This function finds the correlation between every pair of genes
 #' @param counts rna seq counts
+#' @keywords internal
 #' @return the correlation matrix
 .getCountCorrMatrix <- function(counts) {
   count_correlation_matrix <- cor(t(counts), method = "spearman")

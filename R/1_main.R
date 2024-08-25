@@ -460,6 +460,7 @@ sim_true_counts <- function(options) {
 
 #' Rename the original gene IDs in the GRN table to integers.
 #' @param params GRN parameters.
+#' @keywords internal
 #' @return list
 .normalizeGRNParams <- function(params) {
   if (!is.data.frame(params)) {
@@ -684,6 +685,7 @@ sim_true_counts <- function(options) {
 #' @param spatial_params the spatial parameters
 #' @param .plot save the CIF plot
 #' @param .plot.name plot name
+#' @keywords internal
 #' @return a list containing the cif and meta data
 .continuousCIF <- function(seed, N, options, ncell_key = "cell", is_spatial = FALSE, spatial_params = NULL,
                            .plot = FALSE, .plot.name = "cont_cif.pdf") {
