@@ -26,11 +26,19 @@ The following figure briefly shows results from the same cell differential tree:
 
 ## Tutorials and documentation
 
-Please visit the [scMultiSim documentation](https://zhanglabgt.github.io/scMultiSim/) for detailed instructions on how to use scMultiSim.
+Please check out the [tutorials](https://zhanglabgt.github.io/scMultiSim/articles)
+for detailed instructions on how to use scMultiSim.
 
 ## Installation
 
-Please install from this repo and specify the `main` branch:
+It is recommended to install `scMultiSim` from Bioconductor with:
+```R
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("scMultiSim")
+```
+
+You can also install the development version of `scMultiSim` from GitHub with:
 
 ```R
 devtools::install_github("ZhangLabGT/scMultiSim@main")

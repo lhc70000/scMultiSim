@@ -6,10 +6,10 @@ articles:
   - title: Tutorials
     navbar: ~
     contents:
-      - articles/workflow
+      - workflow
       - basics
       - spatialCCI
-      - articles/options
+      - options
 reference:
   - title: Simulation
     desc: Functions for simulating single-cell data.
