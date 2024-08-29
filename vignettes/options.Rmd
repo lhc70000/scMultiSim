@@ -1,5 +1,5 @@
 ---
-title: "Available Options"
+title: "Parameter Guide"
 ---
 
 ```{r, include = FALSE}
@@ -10,6 +10,10 @@ knitr::opts_chunk$set(
 ```
 
 This article introduces the available options in `scMultiSim`.
+
+The following figure shows the general simulation workflow of `scMultiSim`:
+
+![scMultiSim Workflow](https://github.com/ZhangLabGT/scMultiSim/raw/img/img/sim_overview.png)
 
 ## Options: General
 
@@ -25,6 +29,14 @@ scMultiSim should produce the same result if all other parameters are the same.
 
 Use multithreading only when generating the CIF matrix.
 It will not speed up the simulation a lot, thus not recommended.
+
+###  speed.up
+
+> logical (default: `FALSE`)
+
+Enable experimental speed-up mode.
+It is recommended to **enable** this option, and it will be the default in the future.
+Currently, it is disabled for reproducibility.
 
 ## Options: Genes
 
@@ -199,7 +211,83 @@ The parameters used to sample the RIV (Region Identity Vectors).
 With probability `riv.prob`, the value is sampled from N(`riv.mean`, `riv.sd`).
 Otherwise the value is 0.
 
-## Options: Simulation - RNA
+## Customization
+
+###  mod.cif.giv
+
+> function (default: `NULL`)
+
+Modify the generated CIF and GIV.
+The function takes four arguments: the kinetic parameter index (1=kon, 2=koff, 3=s),
+the current CIF matrix, the GIV matrix, and the cell metadata dataframe.
+It should return a list of two elements: the modified CIF matrix and the modified GIV matrix.
+
+```R
+sim_true_counts(list(
+    # ...
+    mod.cif.giv = function(i, cif, giv, meta) {
+        # modify cif and giv
+        return(list(cif, giv))
+    }
+))
+```
+
+### ext.cif.giv
+
+> function (default: `NULL`)
+
+Add extra CIF and GIV.
+The function takes one argument, the kinetic parameter index (1=kon, 2=koff, 3=s).
+It should return a list of two elements: the extra CIF matrix `(n_extra_cif x n_cells)`
+and the GIV matrix `(n_genes x n_extra_cif)`. Return `NULL` for no extra CIF and GIV."
+
+```R
+sim_true_counts(list(
+    # ...
+    ext.cif.giv = function(i) {
+        # add extra cif and giv
+        return(list(extra_cif, extra_giv))
+    }
+))
+```
+
+## Optins: Simulation
+
+### vary
+
+> character (default: `"s"`)
+
+Can be `"all", "kon", "koff", "s", "except_kon", "except_koff", "except_s"`.
+It specifies which kinetic parameters to vary across cells, i.e. which kinetic parameters have differential CIFs
+sampled from the tree.
+
+### bimod
+
+> number (default: `0`)
+
+A number between 0 and 1, which adjust the bimodality of the gene expression distribution.
+
+### scale.s
+
+> number (default: `1`)
+
+Manually scale the final `s` parameter, thus the gene expression.
+When discrete.cif = T, it can be a vector specifying the scale.s for each cluster.
+In this case, you can use smaller value for cell types known to be small (like naive cells).
+
+### intrinsic.noise
+
+> number (default: `1`)
+
+A number between 0 and 1, which specify the weight of the random sample from the Beta-Poisson distribution.
+
+```
+       0 <----------------------> 1
+Theoritical mean          Random sample from
+                      Beta-Poisson distribution
+```
+
+## Options: Simulation - RNA Velocity
 
 ###  do.velocity
 

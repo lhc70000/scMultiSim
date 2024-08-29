@@ -6,7 +6,7 @@ output:
   toc_depth: 2
 vignette: >
   %\VignetteEngine{knitr::knitr}
-  %\VignetteIndexEntry{scMultiSim Basics}
+  %\VignetteIndexEntry{2. Simulating Multimodal Single-cell Datasets}
   %\usepackage[UTF-8]{inputenc}
 ---
 ```{r "setup", include=FALSE}
@@ -38,14 +38,6 @@ opts_chunk$set(fig.width=4, fig.height=3)
 })()
 ```
 
-
-# Simulation Basics
-
-scMultiSim is a simulation tool for single-cell multi-omics data.
-It can simulate RNA counts, ATAC-seq data, RNA velocity,
-and spatial locations of continuous or discrete cell populations.
-It can model the effects of gene regulatory networks (GRN), chromatin accessibility,
-and cell-cell interactions on the simulated data.
 In this tutorial, we will demonstrate how to use scMultiSim to simulate multi-omics data
 with different biological effects, including:
 
@@ -60,6 +52,7 @@ We first load the package:
 library("scMultiSim")
 ```
 
+# Simulating True Counts
 
 scMultiSim first generates the true RNA counts, and then add technical variation and batch effect to the true counts.
 To simulate true counts, call `sim_true_counts(options)` where `options` is a
@@ -165,7 +158,7 @@ options <- list(
 )
 ```
 
-### Minimal Input
+### Omitting the GRN
 
 Note that the minimal input to scMultiSim is the cell population structure (differentiation tree) and number of cells.
 You can omit the GRN by using `GRN = NA`:
@@ -173,6 +166,7 @@ You can omit the GRN by using `GRN = NA`:
 options <- list(
   GRN = NA
   num.cells = 1000,
+  num.genes = 500,
   tree = Phyla5(),
 )
 ```
@@ -185,14 +179,48 @@ results <- sim_true_counts(options)
 names(results)
 ```
 
-The `results` contains the following important data:
-- `counts`: the true RNA counts (genes x cells)
-- `atac_counts`: the true ATAC-seq data (regions x cells)
-- `cell_meta`: the cell meta data, including the cell population labels
+## Accessing the Results
 
-## Visualize the Results
+The return value will be a `scMultiSim Environment` object,
+and you can access various data and parameters using the `$` operator.
 
-We can visualize the true counts and ATAC-seq data using `plot_tsne(data, labels)`:
+- `counts`: Gene-by-cell scRNA-seq counts.
+- `atac_counts`: Region-by-cell scATAC-seq counts.
+- `region_to_gene`: Region-by-gene 0-1 marix indicating the corresponding relationship between chtomatin regions and genes.
+- `atacseq_data`: The "clean" scATAC-seq counts without added intrinsic noise.
+- `cell_meta`: A dataframe containing cell type labels and pseudotime information.
+- `cif`: The CIF used during the simulation.
+- `giv`: The GIV used during the simulation.
+- `kinetic_params`: The kinetic parameters used during the simulation.
+- `.grn`: The GRN used during the simulation.
+- `.grn$regulators`: The list of TFs used by all gene-by-TF matrices.
+- `.grn$geff`: Gene-by-TF matrix representing the GRN used during the simulation.
+- `.n`: Other metadata, e.g. `.n$cells` is the number of cells.
+
+If `do.velocity` is enabled, it has these additional fields:
+
+- `unspliced_counts`: Gene-by-cell unspliced RNA counts.
+- `velocity`: Gene-by-cell RNA velocity ground truth.
+- `cell_time`: The pseudotime at which the cell counts were generated.
+
+If dynamic GRN is enabled, it has these additional fields:
+
+- `cell_specific_grn`: A list of length `n_cells`. Each element is a gene-by-TF matrix, indicating the cell's GRN.
+
+If cell-cell interaction is enabled, it has these additional fields:
+
+- `grid`: The grid object used during the simulation.
+- `grid$get_neighbours(i)`: Get the neighbour cells of cell `i`.
+- `cci_locs`: A dataframe containing the X and Y coordinates of each cell.
+- `cci_cell_type_param`: A dataframe containing the CCI network ground truth: all ligand-receptor pairs between each pair of cell types.
+- `cci_cell_types`: For continuous cell population, the sub-divided cell types along the trajectory used when simulating CCI.
+
+If it is a debug session (`debug = TRUE`), a `sim` field is available,
+which is an environment contains all internal states and data structures.
+
+## Visualizing the Results
+
+We can visualize the true counts and ATAC-seq data using `plot_tsne()`:
 ```{r plot-counts, fig.width = 4, fig.height = 3.5, out.width = "60%"}
 plot_tsne(log2(results$counts + 1),
          results$cell_meta$pop,
@@ -216,35 +244,88 @@ We can inspect the gene-gene correlation using `plot_gene_module_cor_heatmap(res
 plot_gene_module_cor_heatmap(results)
 ```
 
-## Adding Technical Variation
+# Adding Technical Variation and Batch Effect
 
-We can also add the technical variation and batch effect to the true counts:
-```{r add-expr-noise, fig.width = 4, fig.height = 3.5, out.width = "60%"}
-# adds `counts_obs` to `results`
-add_expr_noise(results)
-# adds `counts_with_batches` to `results`
-divide_batches(results, nbatch = 2)
+We can also add the technical variation and batch effect to the true counts.
 
-plot_tsne(log2(results$counts_with_batches + 1),
-         results$cell_meta$pop,
-         legend = 'pop', plot.name = 'RNA Counts Tsne with Batches')
+## Adding technical noise
+
+Simply use the `add_expr_noise` function to add technical noise to the dataset.
+
+```{r technical-noise}
+add_expr_noise(
+  results,
+  # options go here
+  alpha_mean = 1e4
+)
 ```
 
+A `counts_obs` field will be added to the `results` object.
 
-# The Shiny App
+This function also accepts a list of options. See the documentation for more details.
+
+- `protocol`: `"umi"` or `"nonUMI"`, whether simulate the UMI protocol.
+- `alpha_mean`, `alpha_sd`: Mean and deviation of rate of subsampling of transcripts during capture step.
+- `alpha_gene_mean`, `alpha_gene_sd`: `alpha` parameters, but gene-wise.
+- `depth_mean`, `depth_sd`: Mean and deviation of sequencing depth.
+- `gene_len`: A vector with lengths of all genes.
+- `atac.obs.prob`: For each integer count of a particular region for a particular cell, the probability the count will be observed.
+- `atac.sd.frac`: The fraction of ATAC-seq data value used as the standard deviation of added normally distrubted noise.
+- `randseed`: random seed.
+
+## Adding batch effects
+
+Finally, use the `divide_batches` function to add batch effects.
+
+```{r batch-effects}
+divide_batches(
+  results,
+  nbatch = 2,
+  effect = 1
+)
+```
+
+A `counts_with_batches` field will be added to the `results` object.
+
+The available options are:
+
+- `nbatch`: Number of batches.
+- `effect`: The batch effect size.
+
+We can visualize the result with technical noise and batches:
+
+```{r add-expr-noise, fig.width = 4, fig.height = 3.5, out.width = "60%"}
+plot_tsne(log2(results$counts_with_batches + 1),
+          results$cell_meta$pop,
+          legend = 'pop', plot.name = 'RNA Counts Tsne with Batches')
+```
+
+# Adjusting Parameters
+
+scMultiSim provides various parameters to control each type of biological effect.
+Here, we describe the most important parameters and how they affect the simulation results:
+
+- `num.cifs`, `diff.cif.fraction`
+- `cif.mean`, `cif.sigma`
+- `discrete.cif`
+- `intinsic.noise`
+
+For a complete list of parameters, please check out the [Parameter Guide](https://zhanglabgt.github.io/scMultiSim/articles/options)
+page in the documentation.
+
+## The Shiny App
 
 scMultiSim provides a Shiny app to help you generate the options list and visualize the effects of different parameters.
+It is highly recommended to use the Shiny app to explore the available parameters.
 You can run the app by calling `run_shiny()`.
 
 ```{r run-shiny, eval=FALSE}
 run_shiny()
 ```
 
-# Adjusting Parameters
+![Shiny App](https://github.com/ZhangLabGT/scMultiSim/raw/img/img/shiny_app_sc.png)
 
-scMultiSim provides various parameters to control each type of biological effect.
-
-## Deciding Number of CIFs
+## Deciding Number of CIFs: `num.cifs`
 
 In scMultiSim, user use `num.cifs` to control the total number of diff-CIF and non-diff-CIFs.
 The number of CIFs should be large enough to represent the cell population structure and gene information.
@@ -254,7 +335,7 @@ therefore if you have a large number of genes, they may have similar expression 
 It is recommended to increase `num.cifs` to 50-100 if you have more than 2000 genes.
 If you have a small number of genes (less than 1000), you can also decrease `num.cifs` to 20-40.
 
-## Discrete Cell Population
+## Discrete Cell Population: `discrete.cif`
 
 We can also simulate discrete cell population by setting `discrete.cif = TRUE`.
 In this case, each tip of the tree will be one cell type,
@@ -279,7 +360,7 @@ plot_tsne(log2(results$counts + 1),
          legend = 'pop', plot.name = 'True RNA Counts Tsne')
 ```
 
-## Adjusting the Effect of Cell Population
+## Adjusting the Effect of Cell Population: `diff.cif.fraction`
 
 In scMultiSim, the differentiation tree provides explicit control of the cell population.
 The effect of the tree can be adjusted by the option `diff.cif.fraction`,
@@ -315,7 +396,7 @@ plot_tsne(log2(results$counts + 1),
          legend = 'pop', plot.name = 'RNA Counts (diff.cif.fraction = 0.8)')
 ```
 
-## Adjusting the Inherent Cell Heterogeneity
+## Adjusting the Inherent Cell Heterogeneity: `cif.mean` and `cif.sigma`
 
 The inherent cell heterogeneity is controlled by the non-diff-CIF,
 which is sampled from a normal distribution with mean `cif.mean` and standard deviation `cif.sigma`.
@@ -348,7 +429,7 @@ plot_tsne(log2(results$counts + 1),
          legend = 'pop', plot.name = 'RNA Counts (cif.sigma = 1.0)')
 ```
 
-## Adjusting the Intrinsic Noise
+## Adjusting the Intrinsic Noise: `intinsic.noise`
 
 If we set `do.velocity = FALSE`, scMultiSim will simulate the RNA counts using the Beta-Poisson model,
 which is faster but doesn't output RNA velocity.
@@ -384,6 +465,12 @@ plot_tsne(log2(results$counts + 1),
          results$cell_meta$pop,
          legend = 'pop', plot.name = 'RNA Counts (intrinsic.noise = 1)')
 ```
+
+## Adjust the effect of chromatin accessibility: `atac.effect`
+
+`atac.effect` Controls the contribution of the chromatin accessibility.
+A higher `atac.effect` means the RNA counts are more affected by the ATAC-seq data,
+therefore the correlation between the ATAC-seq and RNA-seq data will be higher.
 
 # Simulating Dynamic GRN
 

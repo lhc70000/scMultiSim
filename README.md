@@ -24,7 +24,8 @@ The following figure briefly shows results from the same cell differential tree:
 
 ## Tutorials and documentation
 
-Please visit the [scMultiSim documentation](https://zhanglabgt.github.io/scMultiSim/) for detailed instructions on how to use scMultiSim.
+Please check out the [tutorials](https://zhanglabgt.github.io/scMultiSim/articles)
+for detailed instructions on how to use scMultiSim.
 
 ## Installation
 
