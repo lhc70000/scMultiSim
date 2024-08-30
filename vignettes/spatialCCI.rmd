@@ -388,6 +388,60 @@ plot_cell_loc(results, show.arrows = FALSE,
               .cell.pop = log(results$counts[299,] + 1)) + scale_colour_viridis_c()
 ```
 
+## Long-distance Cell-Cell Interactions
+
+scMultiSim also supports simulation of long-distance cell-cell interactions.
+
+The CCI option `radius` controls the maximum distance between two cells for them to interact.
+It can be a number or a string.
+When it is a number, it specifies the maximum distance.
+When it is a string it should be in the format `gaussian:sigma`, for example, `gaussian:1.2`.
+In this case, the probability of two cells interacting is proportional to the distance with a Gaussian kernel applied.
+
+By default, `radius = 1`, which means scMultiSim only consider the four nearest neighbors.
+
+We can compare the result with different sigma values 1 and 3:
+
+```{r long-distance-cci}
+
+options <- lapply(c(1, 3), \(sigma) {
+  list(
+    rand.seed = 1,
+    GRN = NA,
+    num.genes = 200,
+    num.cells = 500,
+    num.cifs = 50,
+    tree = Phyla5(),
+    discrete.cif = T,
+    discrete.min.pop.size = 20,
+    discrete.pop.size = c(110, 80, 140, 40, 130) %>% as.integer(),
+    do.velocity = F,
+    scale.s = 1,
+    cci = list(
+      params = lig_params,
+      max.neighbors = 4,
+      cell.type.interaction = "random",
+      cell.type.lr.pairs = 3:6,
+      step.size = 0.3,
+      grid.size = 35,
+      start.layer = 500,
+      radius = paste0("gaussian:", sigma),
+      layout = "layers"
+    )
+  )
+
+})
+
+results_1 <- sim_true_counts(options[[1]])
+results_3 <- sim_true_counts(options[[2]])
+
+```
+
+```{r plot-long-distance-cci, fig.width=6, fig.height=6}
+plot_cell_loc(results_1, show.arrows = T, .cell.pop = as.character(results$grid$final_types))
+plot_cell_loc(results_3, show.arrows = T, .cell.pop = as.character(results$grid$final_types))
+```
+
 ## Session Information
 
 ```{r session-info}
