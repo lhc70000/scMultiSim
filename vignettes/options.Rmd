@@ -1,5 +1,13 @@
 ---
 title: "Parameter Guide"
+output:
+    BiocStyle::html_document:
+    toc: true
+    toc_depth: 2
+vignette: >
+    %\VignetteEngine{knitr::knitr}
+    %\VignetteIndexEntry{4. Parameter Guide}
+    %\usepackage[UTF-8]{inputenc}
 ---
 
 ```{r, include = FALSE}

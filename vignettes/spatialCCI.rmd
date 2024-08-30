@@ -6,7 +6,7 @@ output:
   toc_depth: 2
 vignette: >
   %\VignetteEngine{knitr::knitr}
-  %\VignetteIndexEntry{Simulating Spatial Cell-Cell Interactions}
+  %\VignetteIndexEntry{3. Simulating Spatial Cell-Cell Interactions}
   %\usepackage[UTF-8]{inputenc}
 ---
 ```{r "setup", include=FALSE}

@@ -6,7 +6,7 @@ output:
     toc_depth: 2
 vignette: >
     %\VignetteEngine{knitr::knitr}
-    %\VignetteIndexEntry{1. Getting Started}
+    %\VignetteIndexEntry{2. Simulating Multimodal Single-Cell Datasets}
     %\usepackage[UTF-8]{inputenc}
 ---
 
