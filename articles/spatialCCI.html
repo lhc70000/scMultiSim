@@ -42,10 +42,10 @@
 <li class="active nav-item dropdown">
   <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-articles">Articles</a>
   <div class="dropdown-menu" aria-labelledby="dropdown-articles">
-    <a class="dropdown-item" href="../articles/workflow.html">Basic Workflow</a>
+    <a class="dropdown-item" href="../articles/workflow.html">Getting Started</a>
     <a class="dropdown-item" href="../articles/basics.html">Simulating Multimodal Single-cell Datasets</a>
     <a class="dropdown-item" href="../articles/spatialCCI.html">Simulating Spatial Cell-Cell Interactions</a>
-    <a class="dropdown-item" href="../articles/options.html">Available Options</a>
+    <a class="dropdown-item" href="../articles/options.html">Parameter Guide</a>
   </div>
 </li>
 <li class="nav-item">
@@ -93,7 +93,7 @@ need to provide the <code>cci</code> option as a list. The following
 code will print more instructions on how to use the <code>cci</code>
 option.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://zhanglabgt.github.io/scMultiSim/">scMultiSim</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">scMultiSim</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/scmultisim_help.html">scmultisim_help</a></span><span class="op">(</span><span class="st">"cci"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
@@ -165,7 +165,7 @@ database.</p>
 <span><span class="co">## Get CIF...100..200..300..Done</span></span>
 <span><span class="co">## Get params...Done</span></span>
 <span><span class="co">## Simulating...50..100..150..200..250..300..</span></span>
-<span><span class="co">## Time spent: 5.35 mins</span></span></code></pre>
+<span><span class="co">## Time spent: 5.23 mins</span></span></code></pre>
 <p>The <code>results$cell_meta</code> will contain the cell type
 information used in CCI. We can plot the cell spatial locations using
 <code>plotCellLoc()</code>. The arrows indicate cell-cell interactions
@@ -179,11 +179,11 @@ between two cells (for the first ligand-receptor pair).</p>
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">results</span><span class="op">$</span><span class="va">cci_locs</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##        x  y</span></span>
 <span><span class="co">## cell1 26 26</span></span>
-<span><span class="co">## cell2 24 33</span></span>
-<span><span class="co">## cell3 30 22</span></span>
-<span><span class="co">## cell4 20 16</span></span>
-<span><span class="co">## cell5 24 27</span></span>
-<span><span class="co">## cell6 27 26</span></span></code></pre>
+<span><span class="co">## cell2 35 36</span></span>
+<span><span class="co">## cell3 28 36</span></span>
+<span><span class="co">## cell4 21 20</span></span>
+<span><span class="co">## cell5 23 32</span></span>
+<span><span class="co">## cell6 34 36</span></span></code></pre>
 <div class="section level3">
 <h3 id="speeding-up-the-simulation">Speeding up the Simulation<a class="anchor" aria-label="anchor" href="#speeding-up-the-simulation"></a>
 </h3>
@@ -255,7 +255,7 @@ type.</p>
 <pre><code><span><span class="co">## Get CIF...100..200..300..Done</span></span>
 <span><span class="co">## Get params...Done</span></span>
 <span><span class="co">## Simulating...300..</span></span>
-<span><span class="co">## Time spent: 0.42 mins</span></span></code></pre>
+<span><span class="co">## Time spent: 0.41 mins</span></span></code></pre>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_cell_loc.html">plot_cell_loc</a></span><span class="op">(</span><span class="va">results</span>, show.arrows <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <p><img src="spatialCCI_files/figure-html/layout-enhanced-1.png" width="576"></p>
@@ -273,7 +273,7 @@ placed more randomly.</p>
 <pre><code><span><span class="co">## Get CIF...100..200..300..Done</span></span>
 <span><span class="co">## Get params...Done</span></span>
 <span><span class="co">## Simulating...300..</span></span>
-<span><span class="co">## Time spent: 0.43 mins</span></span></code></pre>
+<span><span class="co">## Time spent: 0.41 mins</span></span></code></pre>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_cell_loc.html">plot_cell_loc</a></span><span class="op">(</span><span class="va">results</span>, show.arrows <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <p><img src="spatialCCI_files/figure-html/layout-random-1.png" width="576"></p>
@@ -287,7 +287,7 @@ placed more randomly.</p>
 <pre><code><span><span class="co">## Get CIF...100..200..300..Done</span></span>
 <span><span class="co">## Get params...Done</span></span>
 <span><span class="co">## Simulating...300..</span></span>
-<span><span class="co">## Time spent: 0.42 mins</span></span></code></pre>
+<span><span class="co">## Time spent: 0.40 mins</span></span></code></pre>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_cell_loc.html">plot_cell_loc</a></span><span class="op">(</span><span class="va">results</span>, show.arrows <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <p><img src="spatialCCI_files/figure-html/layout-layers-1.png" width="576"></p>
@@ -309,7 +309,7 @@ number here can be looked up in <code>results$cci_cell_types</code>.</p>
 <pre><code><span><span class="co">## Get CIF...100..200..300..Done</span></span>
 <span><span class="co">## Get params...Done</span></span>
 <span><span class="co">## Simulating...300..</span></span>
-<span><span class="co">## Time spent: 0.42 mins</span></span></code></pre>
+<span><span class="co">## Time spent: 0.40 mins</span></span></code></pre>
 <div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_cell_loc.html">plot_cell_loc</a></span><span class="op">(</span><span class="va">results</span>, show.arrows <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <p><img src="spatialCCI_files/figure-html/layout-islands-1.png" width="576"></p>
@@ -346,7 +346,7 @@ sequentially in the grid, starting from the bottom-left corner.</p>
 <pre><code><span><span class="co">## Get CIF...100..200..300..Done</span></span>
 <span><span class="co">## Get params...Done</span></span>
 <span><span class="co">## Simulating...300..</span></span>
-<span><span class="co">## Time spent: 0.42 mins</span></span></code></pre>
+<span><span class="co">## Time spent: 0.41 mins</span></span></code></pre>
 <div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_cell_loc.html">plot_cell_loc</a></span><span class="op">(</span><span class="va">results</span>, show.arrows <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <p><img src="spatialCCI_files/figure-html/layout-custom-1.png" width="576"></p>
@@ -399,7 +399,7 @@ probabilities and assign them to the domains.</p>
 <span>  <span class="co"># sample cells</span></span>
 <span>  <span class="va">cell_idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, <span class="kw">function</span><span class="op">(</span><span class="va">izone</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">4</span>, <span class="va">pop_mtx</span><span class="op">[</span>,<span class="va">izone</span><span class="op">]</span><span class="op">)</span>, <span class="va">zone_pop</span><span class="op">[</span><span class="va">izone</span><span class="op">]</span><span class="op">)</span></span>
-<span>  <span class="op">}</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/pkg/magrittr/man/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/unlist.html" class="external-link">unlist</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  <span class="op">}</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/unlist.html" class="external-link">unlist</a></span><span class="op">(</span><span class="op">)</span></span>
 <span>  <span class="va">locs</span> <span class="op">&lt;&lt;-</span> <span class="va">new_locs</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/order.html" class="external-link">order</a></span><span class="op">(</span><span class="va">cell_idx</span><span class="op">)</span>,<span class="op">]</span></span>
 <span>  <span class="va">zone_gt</span> <span class="op">&lt;&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, <span class="va">zone_pop</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/order.html" class="external-link">order</a></span><span class="op">(</span><span class="va">cell_idx</span><span class="op">)</span><span class="op">]</span></span>
 <span>  <span class="kw"><a href="https://rdrr.io/r/base/function.html" class="external-link">return</a></span><span class="op">(</span><span class="va">locs</span><span class="op">)</span></span>
@@ -507,7 +507,7 @@ based on the distance to the origin.</p>
 <pre><code><span><span class="co">## Spatial: only the last layer will be simulated.</span></span></code></pre>
 <pre><code><span><span class="co">## Get CIF...Get params...Done</span></span>
 <span><span class="co">## Simulating...500..</span></span>
-<span><span class="co">## Time spent: 0.27 mins</span></span></code></pre>
+<span><span class="co">## Time spent: 0.26 mins</span></span></code></pre>
 <p>Try plotting one of the spatially variable genes. We can see that the
 gene expression is higher in the specific spatial region.</p>
 <div class="sourceCode" id="cb54"><pre class="downlit sourceCode r">
@@ -613,7 +613,7 @@ gene expression is higher in the specific spatial region.</p>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Hechen Li, Xiuwei Zhang, Michael Squires.</p>
+  <p>Developed by Hechen Li, Xiuwei Zhang, Ziqi Zhang, Michael Squires.</p>
 </div>
 
 <div class="pkgdown-footer-right">

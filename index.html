@@ -42,10 +42,10 @@
 <li class="nav-item dropdown">
   <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-articles">Articles</a>
   <div class="dropdown-menu" aria-labelledby="dropdown-articles">
-    <a class="dropdown-item" href="articles/workflow.html">Basic Workflow</a>
+    <a class="dropdown-item" href="articles/workflow.html">Getting Started</a>
     <a class="dropdown-item" href="articles/basics.html">Simulating Multimodal Single-cell Datasets</a>
     <a class="dropdown-item" href="articles/spatialCCI.html">Simulating Spatial Cell-Cell Interactions</a>
-    <a class="dropdown-item" href="articles/options.html">Available Options</a>
+    <a class="dropdown-item" href="articles/options.html">Parameter Guide</a>
   </div>
 </li>
 <li class="nav-item">
@@ -99,13 +99,18 @@
 <div class="section level2">
 <h2 id="tutorials-and-documentation">Tutorials and documentation<a class="anchor" aria-label="anchor" href="#tutorials-and-documentation"></a>
 </h2>
-<p>Please visit the <a href="https://zhanglabgt.github.io/scMultiSim/">scMultiSim documentation</a> for detailed instructions on how to use scMultiSim.</p>
+<p>Please check out the <a href="https://zhanglabgt.github.io/scMultiSim/articles">tutorials</a> for detailed instructions on how to use scMultiSim.</p>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<p>Please install from this repo and specify the <code>main</code> branch:</p>
+<p>It is recommended to install <code>scMultiSim</code> from Bioconductor with:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"BiocManager"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"BiocManager"</span><span class="op">)</span></span>
+<span><span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://bioconductor.github.io/BiocManager/reference/install.html" class="external-link">install</a></span><span class="op">(</span><span class="st">"scMultiSim"</span><span class="op">)</span></span></code></pre></div>
+<p>You can also install the development version of <code>scMultiSim</code> from GitHub with:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"ZhangLabGT/scMultiSim@main"</span><span class="op">)</span></span></code></pre></div>
 <div class="section level3">
 <h3 id="difference-between-the-main-and-bioconductor-branches">Difference between the <code>main</code> and <code>bioconductor</code> branches<a class="anchor" aria-label="anchor" href="#difference-between-the-main-and-bioconductor-branches"></a>
@@ -169,6 +174,7 @@
 <ul class="list-unstyled">
 <li>Hechen Li <br><small class="roles"> Author, maintainer </small> <a href="https://orcid.org/0000-0003-4907-429X" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a> </li>
 <li>Xiuwei Zhang <br><small class="roles"> Author </small>  </li>
+<li>Ziqi Zhang <br><small class="roles"> Author </small>  </li>
 <li>Michael Squires <br><small class="roles"> Author </small>  </li>
 </ul>
 </div>
@@ -180,7 +186,7 @@
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Hechen Li, Xiuwei Zhang, Michael Squires.</p>
+  <p>Developed by Hechen Li, Xiuwei Zhang, Ziqi Zhang, Michael Squires.</p>
 </div>
 
 <div class="pkgdown-footer-right">
