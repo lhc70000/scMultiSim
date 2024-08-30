@@ -103,6 +103,8 @@ option.</p>
 <span><span class="co">## - params: (data.frame)</span></span>
 <span><span class="co">##     The spatial effect between neighbor cells.</span></span>
 <span><span class="co">##     It should be a data frame similar to the GRN parameter.</span></span>
+<span><span class="co">## - grid.size: (integer)</span></span>
+<span><span class="co">##     Manually set the width and height of the grid.</span></span>
 <span><span class="co">## - step.size: (number, optional)</span></span>
 <span><span class="co">##     If using continuous population, use this step size to further divide the</span></span>
 <span><span class="co">##     cell types on the tree. For example, if the tree only has one branch 1 -&gt; 2</span></span>
@@ -114,9 +116,28 @@ option.</p>
 <span><span class="co">##     Supply the string "random" to let scMultiSim generate these factors randomly.</span></span>
 <span><span class="co">##     Otherwise, use cci_cell_type_params() to generate the template data structure.</span></span>
 <span><span class="co">##     See the help of this method for more info.</span></span>
+<span><span class="co">## - cell.type.lr.pairs: (integer vector)</span></span>
+<span><span class="co">##     If cell.type.interaction is "random", how many LR pairs should be enabled between each cell type pair.</span></span>
+<span><span class="co">##     Should be a range, e.g. 4:6. The actual number of LR pairs will be uniformly sampled from this range.</span></span>
 <span><span class="co">## - max.neighbors: (integer from 1 to 4, optional)</span></span>
 <span><span class="co">##     Constraint the maxinum number of neighbors with CCI for each cell.</span></span>
-<span><span class="co">##     The neighbors with CCI will be randomly sampled. </span></span>
+<span><span class="co">##     The neighbors with CCI will be randomly sampled.</span></span>
+<span><span class="co">## - layout: (character or function)</span></span>
+<span><span class="co">##     Supported values are "enhanced",  "layers", "islands", or a custom function.</span></span>
+<span><span class="co">##     The custom function should take two arguments: (grid_size, cell_types)</span></span>
+<span><span class="co">##         grid_size: (integer)</span></span>
+<span><span class="co">##             The width and height of the grid.</span></span>
+<span><span class="co">##         cell_types: (integer vector)</span></span>
+<span><span class="co">##             Each cell's cell type.</span></span>
+<span><span class="co">##     It should return a n_cell x 2 matrix, where each row is the x and y coordinates of a cell.</span></span>
+<span><span class="co">## - radius: (number or string)</span></span>
+<span><span class="co">##     Controls the maximum distance between two cells for them to interact.</span></span>
+<span><span class="co">##     When it is a number, it specifies the maximum distance.</span></span>
+<span><span class="co">##     When it is a string, it should be in the format `gaussian:sigma`, for example, `gaussian:1.2`.</span></span>
+<span><span class="co">##     In this case, the probability of two cells interacting is proportional to the distance with a Gaussian kernel applied.</span></span>
+<span><span class="co">## - start.layer: (integer)</span></span>
+<span><span class="co">##     From which layer (time step) the simulation should start.</span></span>
+<span><span class="co">##     If set to 1, the simulation will start with one cell in the grid and add one more cell in each following layer.</span></span>
 <span><span class="co">## </span></span></code></pre>
 <pre><code><span><span class="co">## NULL</span></span></code></pre>
 <p>Now, we prepare a ligand-receptor interaction database. This is
@@ -165,7 +186,7 @@ database.</p>
 <span><span class="co">## Get CIF...100..200..300..Done</span></span>
 <span><span class="co">## Get params...Done</span></span>
 <span><span class="co">## Simulating...50..100..150..200..250..300..</span></span>
-<span><span class="co">## Time spent: 5.23 mins</span></span></code></pre>
+<span><span class="co">## Time spent: 5.30 mins</span></span></code></pre>
 <p>The <code>results$cell_meta</code> will contain the cell type
 information used in CCI. We can plot the cell spatial locations using
 <code>plotCellLoc()</code>. The arrows indicate cell-cell interactions
@@ -179,11 +200,11 @@ between two cells (for the first ligand-receptor pair).</p>
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">results</span><span class="op">$</span><span class="va">cci_locs</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##        x  y</span></span>
 <span><span class="co">## cell1 26 26</span></span>
-<span><span class="co">## cell2 35 36</span></span>
-<span><span class="co">## cell3 28 36</span></span>
-<span><span class="co">## cell4 21 20</span></span>
-<span><span class="co">## cell5 23 32</span></span>
-<span><span class="co">## cell6 34 36</span></span></code></pre>
+<span><span class="co">## cell2 24 33</span></span>
+<span><span class="co">## cell3 30 22</span></span>
+<span><span class="co">## cell4 20 16</span></span>
+<span><span class="co">## cell5 24 27</span></span>
+<span><span class="co">## cell6 27 26</span></span></code></pre>
 <div class="section level3">
 <h3 id="speeding-up-the-simulation">Speeding up the Simulation<a class="anchor" aria-label="anchor" href="#speeding-up-the-simulation"></a>
 </h3>
@@ -255,7 +276,7 @@ type.</p>
 <pre><code><span><span class="co">## Get CIF...100..200..300..Done</span></span>
 <span><span class="co">## Get params...Done</span></span>
 <span><span class="co">## Simulating...300..</span></span>
-<span><span class="co">## Time spent: 0.41 mins</span></span></code></pre>
+<span><span class="co">## Time spent: 0.42 mins</span></span></code></pre>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_cell_loc.html">plot_cell_loc</a></span><span class="op">(</span><span class="va">results</span>, show.arrows <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <p><img src="spatialCCI_files/figure-html/layout-enhanced-1.png" width="576"></p>
@@ -273,7 +294,7 @@ placed more randomly.</p>
 <pre><code><span><span class="co">## Get CIF...100..200..300..Done</span></span>
 <span><span class="co">## Get params...Done</span></span>
 <span><span class="co">## Simulating...300..</span></span>
-<span><span class="co">## Time spent: 0.41 mins</span></span></code></pre>
+<span><span class="co">## Time spent: 0.42 mins</span></span></code></pre>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_cell_loc.html">plot_cell_loc</a></span><span class="op">(</span><span class="va">results</span>, show.arrows <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <p><img src="spatialCCI_files/figure-html/layout-random-1.png" width="576"></p>
@@ -287,7 +308,7 @@ placed more randomly.</p>
 <pre><code><span><span class="co">## Get CIF...100..200..300..Done</span></span>
 <span><span class="co">## Get params...Done</span></span>
 <span><span class="co">## Simulating...300..</span></span>
-<span><span class="co">## Time spent: 0.40 mins</span></span></code></pre>
+<span><span class="co">## Time spent: 0.41 mins</span></span></code></pre>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_cell_loc.html">plot_cell_loc</a></span><span class="op">(</span><span class="va">results</span>, show.arrows <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <p><img src="spatialCCI_files/figure-html/layout-layers-1.png" width="576"></p>
@@ -309,7 +330,7 @@ number here can be looked up in <code>results$cci_cell_types</code>.</p>
 <pre><code><span><span class="co">## Get CIF...100..200..300..Done</span></span>
 <span><span class="co">## Get params...Done</span></span>
 <span><span class="co">## Simulating...300..</span></span>
-<span><span class="co">## Time spent: 0.40 mins</span></span></code></pre>
+<span><span class="co">## Time spent: 0.41 mins</span></span></code></pre>
 <div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_cell_loc.html">plot_cell_loc</a></span><span class="op">(</span><span class="va">results</span>, show.arrows <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <p><img src="spatialCCI_files/figure-html/layout-islands-1.png" width="576"></p>
@@ -516,9 +537,73 @@ gene expression is higher in the specific spatial region.</p>
 <p><img src="spatialCCI_files/figure-html/spatially-variable-gene-1.png" width="576"></p>
 </div>
 <div class="section level2">
+<h2 id="long-distance-cell-cell-interactions">Long-distance Cell-Cell Interactions<a class="anchor" aria-label="anchor" href="#long-distance-cell-cell-interactions"></a>
+</h2>
+<p>scMultiSim also supports simulation of long-distance cell-cell
+interactions.</p>
+<p>The CCI option <code>radius</code> controls the maximum distance
+between two cells for them to interact. It can be a number or a string.
+When it is a number, it specifies the maximum distance. When it is a
+string it should be in the format <code>gaussian:sigma</code>, for
+example, <code>gaussian:1.2</code>. In this case, the probability of two
+cells interacting is proportional to the distance with a Gaussian kernel
+applied.</p>
+<p>By default, <code>radius = 1</code>, which means scMultiSim only
+consider the four nearest neighbors.</p>
+<p>We can compare the result with different sigma values 1 and 3:</p>
+<div class="sourceCode" id="cb55"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">options</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">3</span><span class="op">)</span>, \<span class="op">(</span><span class="va">sigma</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>    rand.seed <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>    GRN <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>    num.genes <span class="op">=</span> <span class="fl">200</span>,</span>
+<span>    num.cells <span class="op">=</span> <span class="fl">500</span>,</span>
+<span>    num.cifs <span class="op">=</span> <span class="fl">50</span>,</span>
+<span>    tree <span class="op">=</span> <span class="fu"><a href="../reference/Phyla5.html">Phyla5</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>    discrete.cif <span class="op">=</span> <span class="cn">T</span>,</span>
+<span>    discrete.min.pop.size <span class="op">=</span> <span class="fl">20</span>,</span>
+<span>    discrete.pop.size <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">110</span>, <span class="fl">80</span>, <span class="fl">140</span>, <span class="fl">40</span>, <span class="fl">130</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>    do.velocity <span class="op">=</span> <span class="cn">F</span>,</span>
+<span>    scale.s <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>    cci <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>      params <span class="op">=</span> <span class="va">lig_params</span>,</span>
+<span>      max.neighbors <span class="op">=</span> <span class="fl">4</span>,</span>
+<span>      cell.type.interaction <span class="op">=</span> <span class="st">"random"</span>,</span>
+<span>      cell.type.lr.pairs <span class="op">=</span> <span class="fl">3</span><span class="op">:</span><span class="fl">6</span>,</span>
+<span>      step.size <span class="op">=</span> <span class="fl">0.3</span>,</span>
+<span>      grid.size <span class="op">=</span> <span class="fl">35</span>,</span>
+<span>      start.layer <span class="op">=</span> <span class="fl">500</span>,</span>
+<span>      radius <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"gaussian:"</span>, <span class="va">sigma</span><span class="op">)</span>,</span>
+<span>      layout <span class="op">=</span> <span class="st">"layers"</span></span>
+<span>    <span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span></span>
+<span><span class="op">}</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">results_1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sim_true_counts.html">sim_true_counts</a></span><span class="op">(</span><span class="va">options</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## CCI simulation is enabled.</span></span></code></pre>
+<pre><code><span><span class="co">## Spatial: only the last layer will be simulated.</span></span></code></pre>
+<pre><code><span><span class="co">## Get CIF...Get params...Done</span></span>
+<span><span class="co">## Simulating...500..</span></span>
+<span><span class="co">## Time spent: 0.70 mins</span></span></code></pre>
+<div class="sourceCode" id="cb59"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">results_3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sim_true_counts.html">sim_true_counts</a></span><span class="op">(</span><span class="va">options</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## CCI simulation is enabled.</span></span></code></pre>
+<pre><code><span><span class="co">## Spatial: only the last layer will be simulated.</span></span></code></pre>
+<pre><code><span><span class="co">## Get CIF...Get params...Done</span></span>
+<span><span class="co">## Simulating...500..</span></span>
+<span><span class="co">## Time spent: 0.72 mins</span></span></code></pre>
+<div class="sourceCode" id="cb63"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_cell_loc.html">plot_cell_loc</a></span><span class="op">(</span><span class="va">results_1</span>, show.arrows <span class="op">=</span> <span class="cn">T</span>, .cell.pop <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">results</span><span class="op">$</span><span class="va">grid</span><span class="op">$</span><span class="va">final_types</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p><img src="spatialCCI_files/figure-html/plot-long-distance-cci-1.png" width="576"></p>
+<div class="sourceCode" id="cb64"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_cell_loc.html">plot_cell_loc</a></span><span class="op">(</span><span class="va">results_3</span>, show.arrows <span class="op">=</span> <span class="cn">T</span>, .cell.pop <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">results</span><span class="op">$</span><span class="va">grid</span><span class="op">$</span><span class="va">final_types</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p><img src="spatialCCI_files/figure-html/plot-long-distance-cci-2.png" width="576"></p>
+</div>
+<div class="section level2">
 <h2 id="session-information">Session Information<a class="anchor" aria-label="anchor" href="#session-information"></a>
 </h2>
-<div class="sourceCode" id="cb55"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb65"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## R version 4.3.0 (2023-04-21)</span></span>
 <span><span class="co">## Platform: aarch64-apple-darwin20 (64-bit)</span></span>
