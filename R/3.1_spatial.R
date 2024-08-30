@@ -319,6 +319,13 @@ gen_clutter <- function(n_cell, grid_size = NA, center = c(0, 0),
 }
 
 
+.samplePointsGaussianKernel <- function(dist, k, sigma = 1) {
+  probs <- exp(-(dist^2) / (2 * sigma^2))
+  probs <- probs / sum(probs)
+  sample(length(dist), k, prob = probs, replace = FALSE)
+}
+
+
 #' The class for spatial grids
 #' @exportClass spatialGrid
 #' @field method the method to generate the cell layout
@@ -456,7 +463,26 @@ gen_clutter <- function(n_cell, grid_size = NA, center = c(0, 0),
     } else {
       return()
     }
-    if (nb_radius > 1) {
+
+    gen_neighbors()
+  },
+  gen_neighbors = function () {
+    if (nb_radius == 1) return()
+
+    if (is.character(nb_radius)) {
+      if (startsWith(nb_radius, "gaussian:")) {
+        nb_adj <<- TRUE
+        sigma <- as.numeric(substring(nb_radius, 10))
+        # radius is a gaussian kernel
+        nb_map <<- lapply(seq(ncells), function(icell) {
+          dist <- sqrt(colSums((t(pre_allocated_pos) - pre_allocated_pos[icell,])^2))
+          .samplePointsGaussianKernel(dist, max_nbs, sigma)
+        })
+      } else {
+        stop(sprintf("Unknown radius parameter: %s", nb_radius))
+      }
+    } else if (is.number(nb_radius)) {
+      # radius is a fixed number
       nb_adj <<- matrix(FALSE, ncells, ncells)
       for (i in seq_len(ncells)) {
         for (j in seq_len(i - 1)) {
@@ -465,6 +491,11 @@ gen_clutter <- function(n_cell, grid_size = NA, center = c(0, 0),
           }
         }
       }
+      nb_map <<- lapply(seq(ncells), function(icell) {
+        sample(which(nb_adj[icell,]), max_nbs, replace = FALSE)
+      })
+    } else {
+      stop("Invalid CCI radius parameter")
     }
   },
   find_nearby = function(icell, cell.type) {
@@ -505,12 +536,10 @@ gen_clutter <- function(n_cell, grid_size = NA, center = c(0, 0),
     loc <- sample(pool, 1)[[1]]
   },
   allocate = function(icell, cell.type = NULL) {
-    nb_map[[icell]] <<- if (is.null(nb_adj)) {
+    if (is.null(nb_adj)) {
       # if nb_adj is not defined, layout is generated at the simulation time
       # don't support radius > 1, so max possible neighbors = 4
-      sample(seq_len(4), max_nbs, replace = FALSE)
-    } else {
-      sample(which(nb_adj[icell,]), max_nbs, replace = FALSE)
+      nb_map[[icell]] <<- sample(seq_len(4), max_nbs, replace = FALSE)
     }
     loc <- if (method == "accumulated") {
       if (icell == 1) {
