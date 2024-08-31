@@ -54,8 +54,6 @@ the following names:
 - params: (data.frame)
     The spatial effect between neighbor cells.
     It should be a data frame similar to the GRN parameter.
-- grid.size: (integer)
-    Manually set the width and height of the grid.
 - step.size: (number, optional)
     If using continuous population, use this step size to further divide the
     cell types on the tree. For example, if the tree only has one branch `a -> b`
@@ -68,26 +66,28 @@ the following names:
     Otherwise, use cci_cell_type_params() to generate the template data structure.
     See the help of this method for more info.
 - cell.type.lr.pairs: (integer vector)
-    If cell.type.interaction is \"random\", how many LR pairs should be enabled between each cell type pair.
-    Should be a range, e.g. 4:6. The actual number of LR pairs will be uniformly sampled from this range.
-- max.neighbors: (integer from 1 to 4, optional)
+    If cell.type.interaction is \"random\", how many LR pairs should be enabled
+    between each cell type pair.
+    Should be a range, e.g. 4:6. The actual number of LR pairs will be uniformly
+    sampled from this range.
+- max.neighbors: (integer)
     Constraint the maxinum number of neighbors with CCI for each cell.
     The neighbors with CCI will be randomly sampled.
-- layout: (character or function)
-    Supported values are \"enhanced\",  \"layers\", \"islands\", or a custom function.
-    The custom function should take two arguments: (grid_size, cell_types)
-        grid_size: (integer)
-            The width and height of the grid.
-        cell_types: (integer vector)
-            Each cell's cell type.
-    It should return a n_cell x 2 matrix, where each row is the x and y coordinates of a cell.
 - radius: (number or string)
-    Controls the maximum distance between two cells for them to interact.
-    When it is a number, it specifies the maximum distance.
-    When it is a string, it should be in the format `gaussian:sigma`, for example, `gaussian:1.2`.
-    In this case, the probability of two cells interacting is proportional to the distance with a Gaussian kernel applied.
+    Which cells should be considered as neighbors.
+    The interacting cells are those within these neighbors.
+    When it is a number, it controls the maximum distance between two cells for
+    them to interact.
+    When it is a string, it should be in the format `gaussian:sigma`, for example,
+    `gaussian:1.2`.
+    In this case, the probability of two cells interacting is proportional to
+    the distance with a Gaussian kernel applied.
 - start.layer: (integer)
     From which layer (time step) the simulation should start.
-    If set to 1, the simulation will start with one cell in the grid and add one more cell in each following layer.
-      ") 
+    If set to 1, the simulation will start with one cell in the grid and add one
+    more cell in each following layer.
+    If set to `num_cells`, the simulation will start from all cells available in
+    the grid and only continues for a few static layers, which will greatly speed
+    up the simulation.
+      ")
 }
