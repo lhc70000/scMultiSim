@@ -13,7 +13,7 @@ vignette: >
 require("knitr")
 opts_chunk$set(fig.width=4, fig.height=3)
 
-devtools::load_all(".")
+# devtools::load_all(".")
 ```
 
 

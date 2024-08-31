@@ -264,7 +264,6 @@ sim_true_counts <- function(options, return_summarized_exp = FALSE) {
     cat("Get params...")
     n_threads <- OP("threads")
     if (n_threads > 1) {
-      library(BiocParallel)
       sim$params_spatial <- BiocParallel::bplapply(seq(N$cell), \(i, sim) .getParams(
           seed[8] + i, sim,
           sp_cell_i = i, sp_path_i = sim$cell_path[i]

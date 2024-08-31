@@ -9,4 +9,5 @@
 #' @importFrom dplyr %>%
 #' @importFrom zeallot %<-% %->%
 #' @importFrom SummarizedExperiment SummarizedExperiment
+#' @importFrom BiocParallel bplapply MulticoreParam
 NULL
