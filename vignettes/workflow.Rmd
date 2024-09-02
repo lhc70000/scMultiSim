@@ -1,12 +1,12 @@
 ---
-title: "Getting Started"
+title: "1. Getting Started"
 output:
     BiocStyle::html_document:
     toc: true
     toc_depth: 2
 vignette: >
     %\VignetteEngine{knitr::knitr}
-    %\VignetteIndexEntry{2. Simulating Multimodal Single-Cell Datasets}
+    %\VignetteIndexEntry{1. Getting Started}
     %\usepackage[UTF-8]{inputenc}
 ---
 

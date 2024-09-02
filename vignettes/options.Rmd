@@ -1,5 +1,5 @@
 ---
-title: "Parameter Guide"
+title: "4. Parameter Guide"
 output:
     BiocStyle::html_document:
     toc: true

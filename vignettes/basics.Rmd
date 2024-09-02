@@ -1,5 +1,5 @@
 ---
-title: "Simulating Multimodal Single-cell Datasets"
+title: "2. Simulating Multimodal Single-cell Datasets"
 output:
   BiocStyle::html_document:
   toc: true

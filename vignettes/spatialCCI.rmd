@@ -1,5 +1,5 @@
 ---
-title: "Simulating Spatial Cell-Cell Interactions"
+title: "3. Simulating Spatial Cell-Cell Interactions"
 output:
   BiocStyle::html_document:
   toc: true
@@ -9,6 +9,7 @@ vignette: >
   %\VignetteIndexEntry{3. Simulating Spatial Cell-Cell Interactions}
   %\usepackage[UTF-8]{inputenc}
 ---
+
 ```{r "setup", include=FALSE}
 require("knitr")
 opts_chunk$set(fig.width=4, fig.height=3)
@@ -399,7 +400,7 @@ options <- lapply(c(1, 3), \(sigma) {
     tree = Phyla5(),
     discrete.cif = T,
     discrete.min.pop.size = 20,
-    discrete.pop.size = c(110, 80, 140, 40, 130) %>% as.integer(),
+    discrete.pop.size = as.integer(c(110, 80, 140, 40, 130)),
     do.velocity = F,
     scale.s = 1,
     cci = list(
